@@ -1,6 +1,52 @@
+import axios from 'axios'
 import CategoryCard from './CategoryCard'
-import { Watch } from 'lucide-react'
+import CategoryDialog from './CategoryDialog'
+
+import { CircleX } from 'lucide-react'
+import { useState, useEffect } from 'react'
+const API_URL = import.meta.env.VITE_API_URL
+
 export default function CategoryPage() {
+  const [categories, setCategories] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [search, setSearch] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editData, setEditData] = useState(null)
+
+  const groupedCategories = categories.reduce((acc, cur) => {
+    const key = cur.category
+
+    if (!acc[key]) {
+      acc[key] = {
+        category: cur.category,
+        icon: cur.icon,
+        count: 0,
+      }
+    }
+
+    acc[key].count += 1
+    return acc
+  }, {})
+
+  const categoryList = Object.values(groupedCategories)
+  const subCategoryList = categories.filter((c) => c.category === selectedCategory)
+  const searchedSubCategories = categories.filter((c) =>
+    `${c.category} ${c.subcategory}`.toLowerCase().includes(search.toLowerCase())
+  )
+  const fetchCategory = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/category`)
+      setCategories(res.data.categories)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchCategory()
+  }, [])
+
+  
   return (
     <>
       <div className="categorypage w-full h-full mt-10">
@@ -11,7 +57,13 @@ export default function CategoryPage() {
             <p className="text-gray-400">จัดการหมวดหมู่พัสดุของคุณ</p>
           </div>
 
-          <button className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary">
+          <button
+            className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
+            onClick={() => {
+              setEditData(null)
+              setDialogOpen(true)
+            }}
+          >
             + เพิ่มหมวดใหม่
           </button>
         </div>
@@ -19,20 +71,105 @@ export default function CategoryPage() {
         {/* Content */}
         <div className="bg-white w-full px-10 py-10 h-full">
           <div className="flex justify-end gap-6">
-            <input type="text" name="search" className="border border-gray-300 rounded" />
-            <button>ค้นหา</button>
-            <button>ล้างการค้นหา</button>
+            <div className="flex border border-gray-300 rounded px-2 py-2">
+              <input
+                type="text"
+                name="search"
+                placeholder="ค้นหาหมวด / หมวดย่อย"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="
+                outline-none
+                focus:outline-none
+                focus:ring-0
+                active:outline-none
+                active:ring-0
+              "
+              />
+              <button
+                onClick={() => {
+                  setSearch('')
+                  setSelectedCategory(null)
+                }}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <CircleX />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
-            <CategoryCard icon={<Watch size={28} />} title="Accessories" count={58} />
-            <CategoryCard icon={<Watch size={28} />} title="Accessories" count={58} />
-            <CategoryCard icon={<Watch size={28} />} title="Accessories" count={58} />
-            <CategoryCard icon={<Watch size={28} />} title="Accessories" count={58} />
-            <CategoryCard icon={<Watch size={28} />} title="Accessories" count={58} />
-            <CategoryCard icon={<Watch size={28} />} title="Accessories" count={58} />
+            {selectedCategory && (
+              <button
+                className="text-lg text-primary mb-4 cursor-pointer hover:text-2xl transition-all duration-200"
+                onClick={() => setSelectedCategory(null)}
+              >
+                ← กลับไปหมวดหมู่
+              </button>
+            )}
+
+            {/* 🔍 SEARCH MODE → แสดง subcategory ทันที */}
+            {search &&
+              searchedSubCategories.map((c) => (
+                <CategoryCard
+                  key={c.id}
+                  icon={c.icon}
+                  category={c.category}
+                  subcategory={c.subcategory}
+                  onClick={() => {}}
+                />
+              ))}
+
+            {/* 📦 CATEGORY SUMMARY MODE */}
+            {!search &&
+              !selectedCategory &&
+              categoryList.map((c) => (
+                <CategoryCard
+                  key={c.category}
+                  icon={c.icon}
+                  title={c.category}
+                  count={c.count}
+                  onClick={() => setSelectedCategory(c.category)}
+                />
+              ))}
+
+            {/* 📂 SUBCATEGORY MODE */}
+            {!search &&
+              selectedCategory &&
+              subCategoryList.map((c) => (
+                <CategoryCard
+                  key={c.id}
+                  icon={c.icon}
+                  category={c.category}
+                  subcategory={c.subcategory}
+                  onClick={() => {
+                    setEditData({
+                      id: c.id,
+                      category: c.category,
+                      subcategory: c.subcategory,
+                      icon: c.icon,
+                    })
+                    setDialogOpen(true)
+                  }}
+                />
+              ))}
           </div>
         </div>
       </div>
+      <CategoryDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        mode={editData ? 'edit' : 'add'}
+        defaultData={editData}
+        onSubmit={async (data) => {
+          if (editData) {
+            await axios.put(`${API_URL}/category`, data)
+          } else {
+            await axios.post(`${API_URL}/category`, data)
+          }
+          setDialogOpen(false)
+          fetchCategory()
+        }}
+      />
     </>
   )
 }

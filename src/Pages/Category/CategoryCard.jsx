@@ -1,6 +1,12 @@
-export default function CategoryCard({ icon, title, count }) {
+import { Box } from 'lucide-react'
+import { CATEGORY_ICON_MAP } from './categoryIcons'
+
+export default function CategoryCard({ icon, title, count, category, subcategory, onClick }) {
+  const Icon = CATEGORY_ICON_MAP[icon] || Box
+
   return (
     <div
+      onClick={onClick}
       className="
         flex flex-col items-center justify-center
         h-60 p-4
@@ -14,15 +20,17 @@ export default function CategoryCard({ icon, title, count }) {
     >
       {/* Icon */}
       <div className="flex justify-center items-center mb-4 bg-secondary w-full h-[70%] rounded-lg">
-        {icon}
+        <Icon size={32} />
       </div>
 
       <div className="flex flex-col justify-start items-start w-full pl-2">
         {/* Title */}
-        <p className="font-semibold ">{title}</p>
+        <p className="font-semibold">{title ? title : subcategory}</p>
 
-        {/* Count */}
-        <span className="text-sm text-gray-500">{count} รายการ</span>
+        {/* Meta */}
+        {subcategory
+          ? `${category} > ${subcategory}`
+          : count > 0 && <span className="text-xs text-gray-500">{count} หมวด</span>}
       </div>
     </div>
   )
