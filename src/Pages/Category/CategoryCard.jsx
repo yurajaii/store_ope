@@ -2,8 +2,7 @@ import { Box } from 'lucide-react'
 import { CATEGORY_ICON_MAP } from './categoryIcons'
 
 export default function CategoryCard({ icon, title, count, category, subcategory, onClick }) {
-  const Icon = CATEGORY_ICON_MAP[icon] || Box
-
+  const Icon = CATEGORY_ICON_MAP.find((i) => i.key === icon)?.Icon || Box
   return (
     <div
       onClick={onClick}
@@ -23,14 +22,18 @@ export default function CategoryCard({ icon, title, count, category, subcategory
         <Icon size={32} />
       </div>
 
-      <div className="flex flex-col justify-start items-start w-full pl-2">
+      <div className="flex flex-col justify-start items-start w-full pl-2 ">
         {/* Title */}
         <p className="font-semibold">{title ? title : subcategory}</p>
 
         {/* Meta */}
-        {subcategory
-          ? `${category} > ${subcategory}`
-          : count > 0 && <span className="text-xs text-gray-500">{count} หมวด</span>}
+        {subcategory ? (
+          <span className="text-gray-500">
+            {category} &gt; {subcategory}
+          </span>
+        ) : (
+          count > 0 && <span className="text-gray-500">{count} หมวด</span>
+        )}
       </div>
     </div>
   )

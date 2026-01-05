@@ -18,6 +18,7 @@ export default function CategoryDialog({ mode, defaultData, open, onClose, onSub
 
   const handleSubmit = () => {
     onSubmit({
+      id: defaultData?.id,
       category,
       subcategory,
       icon: iconKey,
@@ -50,10 +51,13 @@ export default function CategoryDialog({ mode, defaultData, open, onClose, onSub
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">หมวดหลัก</label>
             <input
-              className="border p-2 rounded"
+              className={`border p-2 rounded ${
+                mode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="เช่น ไฟฟ้า"
+              disabled={mode === 'edit'}
             />
           </div>
 

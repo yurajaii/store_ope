@@ -12,6 +12,7 @@ export default function CategoryPage() {
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editData, setEditData] = useState(null)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const groupedCategories = categories.reduce((acc, cur) => {
     const key = cur.category
@@ -31,8 +32,9 @@ export default function CategoryPage() {
   const categoryList = Object.values(groupedCategories)
   const subCategoryList = categories.filter((c) => c.category === selectedCategory)
   const searchedSubCategories = categories.filter((c) =>
-    `${c.category} ${c.subcategory}`.toLowerCase().includes(search.toLowerCase())
+    `${c.category} ${c.subcategory}`.toLowerCase().includes(debouncedSearch.toLowerCase())
   )
+
   const fetchCategory = async () => {
     try {
       const res = await axios.get(`${API_URL}/category`)
@@ -46,7 +48,14 @@ export default function CategoryPage() {
     fetchCategory()
   }, [])
 
-  
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 1000)
+
+    return () => clearTimeout(t)
+  }, [search])
+
   return (
     <>
       <div className="categorypage w-full h-full mt-10">
@@ -60,7 +69,13 @@ export default function CategoryPage() {
           <button
             className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
             onClick={() => {
-              setEditData(null)
+              setEditData(
+                selectedCategory
+                  ? {
+                      category: selectedCategory,
+                    }
+                  : null
+              )
               setDialogOpen(true)
             }}
           >
@@ -108,7 +123,7 @@ export default function CategoryPage() {
             )}
 
             {/* 🔍 SEARCH MODE → แสดง subcategory ทันที */}
-            {search &&
+            {debouncedSearch &&
               searchedSubCategories.map((c) => (
                 <CategoryCard
                   key={c.id}
@@ -120,7 +135,7 @@ export default function CategoryPage() {
               ))}
 
             {/* 📦 CATEGORY SUMMARY MODE */}
-            {!search &&
+            {!debouncedSearch &&
               !selectedCategory &&
               categoryList.map((c) => (
                 <CategoryCard
@@ -133,7 +148,7 @@ export default function CategoryPage() {
               ))}
 
             {/* 📂 SUBCATEGORY MODE */}
-            {!search &&
+            {!debouncedSearch &&
               selectedCategory &&
               subCategoryList.map((c) => (
                 <CategoryCard
@@ -162,7 +177,7 @@ export default function CategoryPage() {
         defaultData={editData}
         onSubmit={async (data) => {
           if (editData) {
-            await axios.put(`${API_URL}/category`, data)
+            await axios.put(`${API_URL}/category/${data.id}`, data)
           } else {
             await axios.post(`${API_URL}/category`, data)
           }
