@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-export default function Package() {
+export default function Package({ onUpdate }) {
   const [categories, setCategories] = useState([])
   const [selectedCategoryId, setSelectedCategoryId] = useState('__all__')
   const [items, setItems] = useState([])
@@ -134,7 +134,7 @@ export default function Package() {
           </div>
 
           {/* Main Content */}
-          <ItemTable data={filteredItems} />
+          <ItemTable data={filteredItems} onUpdate={onUpdate}/>
         </div>
       </div>
 
