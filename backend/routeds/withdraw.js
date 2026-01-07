@@ -9,7 +9,7 @@ export default function Withdraw(db) {
       SELECT * FROM withdraws`)
     return res.json({
       success: true,
-      withdrawn: result.rows[0],
+      withdrawn: result.rows,
     })
   })
   // ==============================================================================================================
@@ -39,7 +39,7 @@ export default function Withdraw(db) {
       VALUES ($1, 'REQUESTED',$2)
       RETURNING id
       `,
-        [requestedBy,topic]
+        [requestedBy, topic]
       )
 
       const withdrawId = withdrawRes.rows[0].id

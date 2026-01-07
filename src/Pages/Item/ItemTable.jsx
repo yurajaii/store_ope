@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useState } from 'react'
 import { ShoppingBasket } from 'lucide-react'
 
-export default function ItemTable({ data = [] }) {
+export default function ItemTable({ data = [], onUpdate }) {
   const API_URL = import.meta.env.VITE_API_URL
   const [quantities, setQuantities] = useState({})
 
@@ -22,6 +22,7 @@ export default function ItemTable({ data = [] }) {
         ...prev,
         [itemId]: 1,
       }))
+      await onUpdate()
     } catch (err) {
       console.error(err)
     }
@@ -61,7 +62,9 @@ export default function ItemTable({ data = [] }) {
           />
 
           <button
-          className='text-gray-400 cursor-pointer hover:text-gray-500' onClick={() => handleAdd(item.item_id, quantities[item.item_id] ?? 1)}>
+            className="text-gray-400 cursor-pointer hover:text-gray-500"
+            onClick={() => handleAdd(item.item_id, quantities[item.item_id] ?? 1)}
+          >
             <ShoppingBasket />
           </button>
         </div>

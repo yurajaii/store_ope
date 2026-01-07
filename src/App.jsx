@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+// import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import SideBar from './components/SideBar'
 import HomePage from './Pages/Home/HomePage'
@@ -8,24 +8,26 @@ import LogPage from './Pages/Log/LogPage'
 import WithdrawPage from './Pages/Withdraw/WithdrawPage'
 import WishlistPage from './Pages/Wishlist/WishlistPage'
 import { FloatingCartButton } from './components/FAB'
+import { useFavorites } from './hooks/useFavorite'
 
 export default function App() {
-  const [favoriteCount, setFavoriteCount] = useState(0)
+  const { favoriteCount, fetchFavorites } = useFavorites()
+  // const [favoriteCount, setFavoriteCount] = useState(0)
   const API_URL = import.meta.env.VITE_API_URL
 
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      try {
-        const response = await fetch(`${API_URL}/wishlist`)
-        const data = await response.json()
-        setFavoriteCount(data.length)
-      } catch (error) {
-        console.error('Error fetching favorites:', error)
-      }
-    }
+  // useEffect(() => {
+  //   const fetchFavorites = async () => {
+  //     try {
+  //       const response = await fetch(`${API_URL}/wishlist`)
+  //       const data = await response.json()
+  //       setFavoriteCount(data.length)
+  //     } catch (error) {
+  //       console.error('Error fetching favorites:', error)
+  //     }
+  //   }
 
-    fetchFavorites()
-  }, [])
+  //   fetchFavorites()
+  // }, [])
 
   return (
     <BrowserRouter>
@@ -36,10 +38,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/category" element={<CategoryPage />} />
-            <Route path="/items" element={<Package />} />
+            <Route path="/items" element={<Package onUpdate={fetchFavorites} />} />
             <Route path="/withdraw" element={<WithdrawPage />} />
             <Route path="/logs" element={<LogPage />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/wishlist" element={<WishlistPage onUpdate={fetchFavorites} />} />
           </Routes>
           <FloatingCartButton count={favoriteCount} />
         </main>
