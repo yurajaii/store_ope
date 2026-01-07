@@ -25,126 +25,124 @@ export default function InventoryList(db) {
     }
   })
 
-
   router.post('/log', async (req, res) => {
-  const { item_id, type, quantity } = req.body
-  const createdBy = req.user?.id ?? null
+    const { item_id, type, quantity } = req.body
+    const createdBy = req.user?.id ?? null
 
-  if (!item_id || !type || quantity === undefined) {
-    return res.status(400).json({
-      success: false,
-      message: 'item_id, type, quantity are required',
-    })
-  }
+    if (!item_id || !type || quantity === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'item_id, type, quantity are required',
+      })
+    }
 
-  if (!['IN', 'OUT', 'RETURN', 'ADJUST'].includes(type)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid inventory log type',
-    })
-  }
+    if (!['IN', 'OUT', 'RETURN', 'ADJUST'].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid inventory log type',
+      })
+    }
 
-  // quantity rule
-  if (type !== 'ADJUST' && quantity <= 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Quantity must be positive',
-    })
-  }
+    // quantity rule
+    if (type !== 'ADJUST' && quantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quantity must be positive',
+      })
+    }
 
-  const client = await db.connect()
+    const client = await db.connect()
 
-  try {
-    await client.query('BEGIN')
+    try {
+      await client.query('BEGIN')
 
-    const itemRes = await client.query(
-      `
+      const itemRes = await client.query(
+        `
       SELECT inv.quantity
       FROM inventories inv
       JOIN items i ON i.id = inv.item_id
       WHERE i.id = $1 AND i.is_active = true
       FOR UPDATE
       `,
-      [item_id]
-    )
+        [item_id]
+      )
 
-    if (itemRes.rows.length === 0) {
-      await client.query('ROLLBACK')
-      return res.status(404).json({
-        success: false,
-        message: 'Item not found',
-      })
-    }
-
-    const currentQty = itemRes.rows[0].quantity
-    let delta = 0
-
-    // ===== inventory effect =====
-    if (type === 'IN') {
-      delta = quantity
-    }
-
-    if (type === 'OUT') {
-      if (currentQty < quantity) {
+      if (itemRes.rows.length === 0) {
         await client.query('ROLLBACK')
-        return res.status(400).json({
+        return res.status(404).json({
           success: false,
-          message: 'Insufficient stock',
+          message: 'Item not found',
         })
       }
-      delta = -quantity
-    }
 
-    if (type === 'RETURN') {
-      // คืนของ = เพิ่ม stock
-      delta = quantity
-    }
+      const currentQty = itemRes.rows[0].quantity
+      let delta = 0
 
-    if (type === 'ADJUST') {
-      // quantity เป็น signed (+ / -)
-      if (currentQty + quantity < 0) {
-        await client.query('ROLLBACK')
-        return res.status(400).json({
-          success: false,
-          message: 'Insufficient stock',
-        })
+      // ===== inventory effect =====
+      if (type === 'IN') {
+        delta = quantity
       }
-      delta = quantity
-    }
-    // ============================
 
-    await client.query(
-      `
+      if (type === 'OUT') {
+        if (currentQty < quantity) {
+          await client.query('ROLLBACK')
+          return res.status(400).json({
+            success: false,
+            message: 'Insufficient stock',
+          })
+        }
+        delta = -quantity
+      }
+
+      if (type === 'RETURN') {
+        // คืนของ = เพิ่ม stock
+        delta = quantity
+      }
+
+      if (type === 'ADJUST') {
+        // quantity เป็น signed (+ / -)
+        if (currentQty + quantity < 0) {
+          await client.query('ROLLBACK')
+          return res.status(400).json({
+            success: false,
+            message: 'Insufficient stock',
+          })
+        }
+        delta = quantity
+      }
+      // ============================
+
+      await client.query(
+        `
       INSERT INTO inventory_logs (item_id, type, quantity, created_by)
       VALUES ($1, $2, $3, $4)
       `,
-      [item_id, type, quantity, createdBy]
-    )
+        [item_id, type, quantity, createdBy]
+      )
 
-    await client.query(
-      `
+      await client.query(
+        `
       UPDATE inventories
       SET quantity = quantity + $1
       WHERE item_id = $2
       `,
-      [delta, item_id]
-    )
+        [delta, item_id]
+      )
 
-    await client.query('COMMIT')
+      await client.query('COMMIT')
 
-    return res.json({
-      success: true,
-      message: 'Inventory log saved',
-    })
-  } catch (err) {
-    await client.query('ROLLBACK')
-    console.error(err)
-    return res.status(500).json({ success: false })
-  } finally {
-    client.release()
-  }
-})
-
+      return res.json({
+        success: true,
+        message: 'Inventory log saved',
+      })
+    } catch (err) {
+      await client.query('ROLLBACK')
+      console.error(err)
+      return res.status(500).json({ success: false })
+    } finally {
+      client.release()
+    }
+  })
 
   return router
 }

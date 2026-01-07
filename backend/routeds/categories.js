@@ -6,10 +6,6 @@ export default function Category(db) {
   router.get('/', async (req, res) => {
     try {
       const result = await db.query('SELECT * FROM categories')
-      for (let index = 0; index < result.rows.length; index++) {
-        console.log(result.rows[index])
-      }
-
       return res.json({
         success: true,
         categories: result.rows,

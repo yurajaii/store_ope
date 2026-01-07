@@ -5,7 +5,10 @@ const router = express.Router()
 export default function ItemList(db) {
   router.get('/', async (req, res) => {
     try {
-      const result = await db.query(`SELECT * FROM items WHERE is_active`)
+      const result = await db.query(`SELECT *
+      FROM inventories AS inv
+      LEFT JOIN items AS i ON inv.item_id = i.id
+      LEFT JOIN categories AS c ON i.category_id = c.id`)
 
       return res.json({
         success: true,
