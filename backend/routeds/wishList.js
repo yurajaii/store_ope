@@ -64,7 +64,7 @@ export default function WishList(db) {
   })
 
   router.delete('/:itemId', async (req, res) => {
-    const { user_id } = req.body
+    const user_id = req.body?.user_id || 2
     const itemId = req.params.itemId
 
     await db.query(

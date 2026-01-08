@@ -1,24 +1,395 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { Ellipsis } from 'lucide-react'
+import toThaiTime from '@/Utils/toThaiTime'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 export default function WithdrawPage() {
-  const [withdraw, setWithdraw] = useState([])
+  const [withdrawList, setWithdrawList] = useState([])
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedWithdraw, setSelectedWithdraw] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [approvalData, setApprovalData] = useState({})
+  const [sortOrder, setSortOrder] = useState('desc')
   const API_URL = import.meta.env.VITE_API_URL
-  const fetchWithdran = async () => {
+
+  const fetchWithdrawList = async () => {
     try {
       const res = await axios.get(`${API_URL}/withdraw`)
-      setWithdraw(res.data.withdrawn)
+      setWithdrawList(res.data.withdrawn)
     } catch (err) {
       console.error(err)
     }
   }
 
+  const fetchWithdrawDetail = async (withdrawId) => {
+    setLoading(true)
+    try {
+      const res = await axios.get(`${API_URL}/withdraw/${withdrawId}`)
+      setSelectedWithdraw(res.data.withdraw)
+
+      // เตรียมข้อมูลสำหรับอนุมัติ (default = อนุมัติเต็มจำนวน)
+      const initialApproval = {}
+      res.data.withdraw.items?.forEach((item) => {
+        initialApproval[item.withdraw_item_id] = {
+          approved_quantity: item.requested_quantity,
+          reject_reason: '',
+        }
+      })
+      setApprovalData(initialApproval)
+    } catch (err) {
+      console.error(err)
+      alert('ไม่สามารถโหลดข้อมูลได้')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOpenDialog = async (withdraw) => {
+    setDialogOpen(true)
+    await fetchWithdrawDetail(withdraw.id)
+  }
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false)
+    setSelectedWithdraw(null)
+    setApprovalData({})
+  }
+
+  const handleQuantityChange = (itemId, value) => {
+    setApprovalData((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        approved_quantity: parseInt(value) || 0,
+      },
+    }))
+  }
+
+  const handleReasonChange = (itemId, value) => {
+    setApprovalData((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        reject_reason: value,
+      },
+    }))
+  }
+
+  const handleApprove = async () => {
+    try {
+      const items = selectedWithdraw.items.map((item) => ({
+        withdraw_item_id: item.withdraw_item_id,
+        approved_quantity: approvalData[item.withdraw_item_id]?.approved_quantity || 0,
+        reject_reason: approvalData[item.withdraw_item_id]?.reject_reason || null,
+      }))
+
+      await axios.post(`${API_URL}/withdraw/${selectedWithdraw.id}/approve`, {
+        items,
+        note: 'อนุมัติโดยระบบ',
+      })
+
+      alert('อนุมัติสำเร็จ!')
+      handleCloseDialog()
+      await fetchWithdrawList()
+    } catch (error) {
+      console.error('Approval failed:', error)
+      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message))
+    }
+  }
+
+  const sortedList = [...withdrawList].sort((a, b) => {
+    const dateA = new Date(a.created_at)
+    const dateB = new Date(b.created_at)
+
+    return sortOrder === 'desc'
+      ? dateB - dateA // ใหม่ → เก่า
+      : dateA - dateB // เก่า → ใหม่
+  })
+
   useEffect(() => {
-    fetchWithdran()
+    fetchWithdrawList()
   }, [])
+
   return (
     <>
-      <div>Withdraw Page</div>
+      <div className="categorypage w-full h-full mt-10">
+        <div className="header flex justify-between px-10 py-8">
+          <div className="flex flex-col gap-2">
+            <p className="text-3xl font-bold">ใบเบิกของฉัน</p>
+            <p className="text-gray-400">สามารถดูสถานะใบเบิกได้ที่นี่</p>
+          </div>
+          <button className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary">
+            + สร้างใบเบิก
+          </button>
+        </div>
+
+        <div className="bg-white px-10 py-10">
+          <div className="grid grid-cols-[80px_1fr_200px_120px_150px_50px] gap-4 font-semibold text-gray-700 pb-3 border-b-2">
+            <div>ลำดับ</div>
+            <div>วัตถุประสงค์</div>
+            <div>แผนก</div>
+            <div>สถานะ</div>
+            <div>วันที่สร้าง</div>
+            <div></div>
+          </div>
+          <button onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
+            เรียงตาม: {sortOrder === 'desc' ? '↓ ใหม่ → เก่า' : '↑ เก่า → ใหม่'}
+          </button>
+          {sortedList.map((w) => (
+            <div
+              key={w.id}
+              className="grid grid-cols-[80px_1fr_200px_120px_150px_50px] gap-4 items-center py-3 border-b hover:bg-gray-50"
+            >
+              <div className="font-semibold">#{w.id}</div>
+              <div className="truncate">{w.topic.purpose}</div>
+              <div className="text-sm text-gray-600 truncate">{w.topic.department}</div>
+              <div>
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                    w.status === 'REQUESTED'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : w.status === 'APPROVED'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {w.status}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600">{toThaiTime(w.created_at)}</div>
+              <div>
+                <Ellipsis
+                  onClick={() => handleOpenDialog(w)}
+                  className="cursor-pointer hover:bg-gray-200 rounded p-1"
+                />
+              </div>
+            </div>
+          ))}
+
+          {withdrawList.length === 0 && (
+            <div className="text-center py-10 text-gray-400">ไม่มีใบเบิก</div>
+          )}
+        </div>
+
+        {/* Dialog for Withdraw Details */}
+        <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
+          <DialogContent className="font-[prompt] max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                รายละเอียดใบเบิก {selectedWithdraw ? `#${selectedWithdraw.id}` : ''}
+              </DialogTitle>
+              <DialogDescription>แสดงรายละเอียดและอนุมัติใบเบิกพัสดุ</DialogDescription>
+            </DialogHeader>
+
+            {loading ? (
+              <div className="py-10 text-center text-gray-500">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500 mx-auto"></div>
+                <p className="mt-3">กำลังโหลด...</p>
+              </div>
+            ) : selectedWithdraw ? (
+              <div className="py-4 space-y-6">
+                {/* ข้อมูลผู้ขอเบิก */}
+                <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      ชื่อ-นามสกุล
+                    </label>
+                    <p className="text-sm font-medium">{selectedWithdraw.topic.fullname}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      เบอร์โทรศัพท์
+                    </label>
+                    <p className="text-sm font-medium">{selectedWithdraw.topic.phone}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      แผนก/หน่วยงาน
+                    </label>
+                    <p className="text-sm font-medium">{selectedWithdraw.topic.department}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      โครงการ/กิจกรรม
+                    </label>
+                    <p className="text-sm font-medium">{selectedWithdraw.topic.project}</p>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      วัตถุประสงค์
+                    </label>
+                    <p className="text-sm font-medium">{selectedWithdraw.topic.purpose}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">สถานะ</label>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                        selectedWithdraw.status === 'REQUESTED'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : selectedWithdraw.status === 'APPROVED'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {selectedWithdraw.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      วันที่สร้าง
+                    </label>
+                    <p className="text-sm font-medium">{toThaiTime(selectedWithdraw.created_at)}</p>
+                  </div>
+                </div>
+
+                {/* รายการสินค้า */}
+                <div>
+                  <p className="text-sm font-bold mb-3">รายการที่ขอเบิก:</p>
+                  <div className="space-y-3">
+                    {selectedWithdraw.items?.map((item) => (
+                      <div key={item.withdraw_item_id} className="border rounded-lg p-4 bg-white">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <p className="font-semibold text-base">{item.name}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              หมวดหมู่: {item.category || '-'}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-xs px-2 py-1 rounded ${
+                              item.status === 'approved'
+                                ? 'bg-green-100 text-green-700'
+                                : item.status === 'rejected'
+                                ? 'bg-red-100 text-red-700'
+                                : item.status === 'partial'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {item.status || 'pending'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">จำนวนที่ขอ</p>
+                            <p className="font-semibold">
+                              {item.requested_quantity} {item.unit}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">คงเหลือในสต็อก</p>
+                            <p className="font-semibold">
+                              {item.stock_quantity} {item.unit}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">สถานะการอนุมัติ</p>
+                            {item.approved_quantity !== null ? (
+                              <p className="font-semibold text-green-600">
+                                อนุมัติ: {item.approved_quantity} {item.unit}
+                              </p>
+                            ) : (
+                              <p className="font-semibold text-gray-400">รอพิจารณา</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ฟอร์มอนุมัติ (แสดงเฉพาะสถานะ REQUESTED) */}
+                        {selectedWithdraw.status === 'REQUESTED' && (
+                          <div className="mt-4 pt-4 border-t space-y-3">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">
+                                จำนวนที่อนุมัติ (สูงสุด: {item.requested_quantity})
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                max={item.requested_quantity}
+                                value={approvalData[item.withdraw_item_id]?.approved_quantity || 0}
+                                onChange={(e) =>
+                                  handleQuantityChange(item.withdraw_item_id, e.target.value)
+                                }
+                                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium mb-2">
+                                เหตุผล (ถ้าปฏิเสธหรืออนุมัติบางส่วน)
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="เช่น สต็อกไม่เพียงพอ"
+                                value={approvalData[item.withdraw_item_id]?.reject_reason || ''}
+                                onChange={(e) =>
+                                  handleReasonChange(item.withdraw_item_id, e.target.value)
+                                }
+                                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* แสดงเหตุผลถ้ามี */}
+                        {item.reject_reason && (
+                          <div className="mt-3 p-3 bg-red-50 rounded">
+                            <p className="text-xs text-red-600">
+                              <span className="font-semibold">เหตุผล:</span> {item.reject_reason}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* หมายเหตุการอนุมัติ */}
+                {selectedWithdraw.approved_note && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-blue-900 mb-1">
+                      หมายเหตุจากผู้อนุมัติ
+                    </label>
+                    <p className="text-sm text-blue-800">{selectedWithdraw.approved_note}</p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            <DialogFooter>
+              <button
+                onClick={handleCloseDialog}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+              >
+                ปิด
+              </button>
+
+              {selectedWithdraw?.status === 'REQUESTED' && !loading && (
+                <button
+                  onClick={handleApprove}
+                  className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded ml-2"
+                >
+                  บันทึกการอนุมัติ
+                </button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </>
   )
 }

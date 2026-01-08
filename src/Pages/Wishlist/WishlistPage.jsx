@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { Trash2 } from 'lucide-react'
 
 export default function WishlistPage({ onUpdate }) {
   const API_URL = import.meta.env.VITE_API_URL
@@ -79,6 +80,16 @@ export default function WishlistPage({ onUpdate }) {
       fetchWishlist()
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  const handleDelete = async (itemId) => {
+    try {
+      await axios.delete(`${API_URL}/wishlist/${itemId}`)
+      await onUpdate()
+      fetchWishlist()
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -207,9 +218,13 @@ export default function WishlistPage({ onUpdate }) {
                   </button>
                 </div>
               </div>
+              <div className="text-red-400 cursor-pointer">
+                <Trash2 onClick={() => handleDelete(w.item_id)} />
+              </div>
             </div>
           ))}
         </div>
+
         {/* Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="font-[prompt] max-w-2xl max-h-[90vh] overflow-y-auto">
