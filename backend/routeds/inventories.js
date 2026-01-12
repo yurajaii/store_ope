@@ -26,9 +26,11 @@ export default function InventoryList(db) {
   })
 
   router.post('/log', async (req, res) => {
-    const { item_id, type, quantity } = req.body
-    const createdBy = req.user?.id ?? null
+    // 1. รับค่าเพิ่มจาก req.body
+    const { item_id, type, quantity, reference_id, remark } = req.body
+    const createdBy = req.user?.id ?? 2
 
+    // Validation พื้นฐาน
     if (!item_id || !type || quantity === undefined) {
       return res.status(400).json({
         success: false,
@@ -43,7 +45,6 @@ export default function InventoryList(db) {
       })
     }
 
-    // quantity rule
     if (type !== 'ADJUST' && quantity <= 0) {
       return res.status(400).json({
         success: false,
@@ -56,14 +57,15 @@ export default function InventoryList(db) {
     try {
       await client.query('BEGIN')
 
+      // 2. ดึงยอดปัจจุบันและ Lock แถวไว้เพื่อป้องกัน Race Condition
       const itemRes = await client.query(
         `
-      SELECT inv.quantity
-      FROM inventories inv
-      JOIN items i ON i.id = inv.item_id
-      WHERE i.id = $1 AND i.is_active = true
-      FOR UPDATE
-      `,
+        SELECT inv.quantity
+        FROM inventories inv
+        JOIN items i ON i.id = inv.item_id
+        WHERE i.id = $1 AND i.is_active = true
+        FOR UPDATE
+        `,
         [item_id]
       )
 
@@ -78,62 +80,71 @@ export default function InventoryList(db) {
       const currentQty = itemRes.rows[0].quantity
       let delta = 0
 
-      // ===== inventory effect =====
-      if (type === 'IN') {
+      // 3. คำนวณส่วนต่าง (Inventory Effect)
+      if (type === 'IN' || type === 'RETURN') {
         delta = quantity
-      }
-
-      if (type === 'OUT') {
-        if (currentQty < quantity) {
-          await client.query('ROLLBACK')
-          return res.status(400).json({
-            success: false,
-            message: 'Insufficient stock',
-          })
-        }
+      } else if (type === 'OUT') {
         delta = -quantity
-      }
-
-      if (type === 'RETURN') {
-        // คืนของ = เพิ่ม stock
+      } else if (type === 'ADJUST') {
         delta = quantity
       }
 
-      if (type === 'ADJUST') {
-        // quantity เป็น signed (+ / -)
-        if (currentQty + quantity < 0) {
-          await client.query('ROLLBACK')
-          return res.status(400).json({
-            success: false,
-            message: 'Insufficient stock',
-          })
-        }
-        delta = quantity
+      // 4. คำนวณยอดคงเหลือใหม่ (Balance After)
+      const newBalance = currentQty + delta
+
+      // ตรวจสอบสต็อกติดลบ
+      if (newBalance < 0) {
+        await client.query('ROLLBACK')
+        return res.status(400).json({
+          success: false,
+          message: 'Insufficient stock',
+        })
       }
-      // ============================
 
+      // 5. บันทึก Log พร้อมข้อมูลใหม่ทั้งหมด
       await client.query(
         `
-      INSERT INTO inventory_logs (item_id, type, quantity, created_by)
-      VALUES ($1, $2, $3, $4)
-      `,
-        [item_id, type, quantity, createdBy]
+        INSERT INTO inventory_logs 
+        (item_id, type, quantity, created_by, reference_id, balance_after, remark)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `,
+        [item_id, type, quantity, createdBy, reference_id, newBalance, remark]
       )
 
+      // 6. อัปเดตตารางหลักด้วยยอดที่คำนวณแล้ว
       await client.query(
         `
-      UPDATE inventories
-      SET quantity = quantity + $1
-      WHERE item_id = $2
-      `,
-        [delta, item_id]
+        UPDATE inventories
+        SET quantity = $1
+        WHERE item_id = $2
+        `,
+        [newBalance, item_id]
       )
+      // 7.กรณีเป็นการคืนสินค้า อัพเดทใน withdraw_id ด้วย
+      if (type === 'RETURN' && reference_id.startsWith('WITHDRAW-#')) {
+        const withdrawId = reference_id.replace('WITHDRAW-#', '')
 
+        await client.query(
+          `UPDATE withdraw_items 
+             SET returned_quantity = returned_quantity + $1
+             WHERE withdraw_id = $2 AND item_id = $3`,
+          [quantity, withdrawId, item_id]
+        )
+
+        // อัปเดตสถานะเป็น 'returned' ถ้าคืนครบตามที่อนุมัติ
+        await client.query(
+          `UPDATE withdraw_items 
+             SET status = 'returned' 
+             WHERE withdraw_id = $1 AND item_id = $2 AND returned_quantity >= approved_quantity`,
+          [withdrawId, item_id]
+        )
+      }
       await client.query('COMMIT')
 
       return res.json({
         success: true,
         message: 'Inventory log saved',
+        newBalance: newBalance,
       })
     } catch (err) {
       await client.query('ROLLBACK')
@@ -143,6 +154,82 @@ export default function InventoryList(db) {
       client.release()
     }
   })
+  router.get('/log', async (req, res) => {
+    // 1. เพิ่มการรับค่า page และ limit จาก query
+    const { start_date, end_date, category_id, item_id } = req.query
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20 
+    const offset = (page - 1) * limit
 
+    try {
+      let query = `
+      SELECT 
+        l.*, 
+        i.name AS item_name, 
+        c.category AS category_name,
+        c.subcategory AS subcategory_name,
+        COUNT(*) OVER() AS total_count
+      FROM inventory_logs l
+      JOIN items i ON l.item_id = i.id
+      LEFT JOIN categories c ON i.category_id = c.id
+      WHERE 1=1
+    `
+      const params = []
+
+      // --- ส่วน Filter เหมือนเดิม ---
+      if (item_id) {
+        params.push(item_id)
+        query += ` AND l.item_id = $${params.length}`
+      }
+      if (category_id) {
+        params.push(category_id)
+        query += ` AND i.category_id = $${params.length}`
+      }
+      if (start_date) {
+        params.push(start_date)
+        query += ` AND l.created_at >= $${params.length}`
+      }
+      if (end_date) {
+        params.push(`${end_date} 23:59:59`)
+        query += ` AND l.created_at <= $${params.length}`
+      }
+
+      // 2. เพิ่มการเรียงลำดับ และ LIMIT / OFFSET
+      query += ` ORDER BY l.created_at DESC, l.id DESC `
+
+      params.push(limit)
+      query += ` LIMIT $${params.length}`
+
+      params.push(offset)
+      query += ` OFFSET $${params.length}`
+
+      const result = await db.query(query, params)
+
+      // 3. คำนวณข้อมูลหน้า
+      const totalItems = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0
+      const totalPages = Math.ceil(totalItems / limit)
+      const logs = result.rows.map((row) => {
+        const { ...data } = row
+        return data
+      })
+
+      return res.json({
+        success: true,
+        inventory_log: logs,
+        pagination: {
+          total_items: totalItems,
+          total_pages: totalPages,
+          current_page: page,
+          limit: limit,
+        },
+      })
+    } catch (error) {
+      console.log('Get inventory log error:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Database Error',
+      })
+    }
+  })
   return router
 }

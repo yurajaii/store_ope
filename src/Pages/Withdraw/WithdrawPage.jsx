@@ -105,6 +105,41 @@ export default function WithdrawPage() {
     }
   }
 
+  const handleReturn = async (item, withdrawId) => {
+    const returnQty = prompt(
+      `กรุณาระบุจำนวนที่ต้องการคืน (สูงสุด: ${item.approved_quantity}):`,
+      item.approved_quantity
+    )
+
+    if (returnQty === null) return // กดยกเลิก
+
+    const qty = parseInt(returnQty)
+    if (isNaN(qty) || qty <= 0 || qty > item.approved_quantity) {
+      alert('จำนวนไม่ถูกต้อง')
+      return
+    }
+
+    try {
+      const payload = {
+        item_id: item.item_id,
+        type: 'RETURN',
+        quantity: qty,
+        reference_id: `WITHDRAW-#${withdrawId}`, // อ้างอิงเลขใบเบิก
+        remark: `คืนพัสดุจากใบเบิก #${withdrawId}`,
+      }
+
+      await axios.post(`${API_URL}/inventory/log`, payload)
+      alert('บันทึกการคืนของสำเร็จ!')
+
+      // Refresh ข้อมูล
+      await fetchWithdrawDetail(withdrawId)
+      await fetchWithdrawList()
+    } catch (error) {
+      console.error('Return failed:', error)
+      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message))
+    }
+  }
+
   const sortedList = [...withdrawList].sort((a, b) => {
     const dateA = new Date(a.created_at)
     const dateB = new Date(b.created_at)
@@ -300,9 +335,22 @@ export default function WithdrawPage() {
                           <div>
                             <p className="text-gray-500">สถานะการอนุมัติ</p>
                             {item.approved_quantity !== null ? (
-                              <p className="font-semibold text-green-600">
-                                อนุมัติ: {item.approved_quantity} {item.unit}
-                              </p>
+                              <div className="flex justify-between gap-2">
+                                <p className="font-semibold text-green-600">
+                                  อนุมัติ: {item.approved_quantity} {item.unit}
+                                </p>
+
+                                {/* ปุ่มคืนของ */}
+                                {selectedWithdraw.status === 'APPROVED' &&
+                                  item.approved_quantity > 0 && (
+                                    <button
+                                      onClick={() => handleReturn(item, selectedWithdraw.id)}
+                                      className=" text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 w-fit"
+                                    >
+                                      คืนของเข้าสต็อก ↺
+                                    </button>
+                                  )}
+                              </div>
                             ) : (
                               <p className="font-semibold text-gray-400">รอพิจารณา</p>
                             )}

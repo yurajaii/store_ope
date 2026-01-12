@@ -192,27 +192,37 @@ export default function Withdraw(db) {
           for (const it of itemsToDeduct) {
             const { item_id, approved_quantity } = it
 
-            // พยายามหาบันทึก inventories ที่มีสต็อกเพียงพอแล้วหักออกในคำสั่งเดียว (ป้องกัน race)
+            // 1. หักสต็อกและดึงค่า quantity ใหม่ (new balance) ออกมาทันที
             const invUpdate = await client.query(
               `UPDATE inventories
-             SET quantity = quantity - $1
-             WHERE item_id = $2 AND quantity >= $1
-             RETURNING id, quantity`,
+               SET quantity = quantity - $1
+               WHERE item_id = $2 AND quantity >= $1
+               RETURNING quantity`,
               [approved_quantity, item_id]
             )
 
             if (invUpdate.rowCount === 0) {
-              // ไม่พอสต็อก -> rollback ทั้งหมด
               throw new Error(
-                `Not enough inventory for item ${item_id} to deduct ${approved_quantity}`
+                `สต็อกสินค้า ID ${item_id} ไม่เพียงพอ (ต้องการหักออก ${approved_quantity})`
               )
             }
 
-            // เพิ่ม log การเคลื่อนไหว
+            const newBalance = invUpdate.rows[0].quantity
+
+            // 2. บันทึก log โดยใช้คอลัมน์ใหม่ที่แก้มารองรับ
             await client.query(
-              `INSERT INTO inventory_logs (item_id, type, quantity, created_at, created_by)
-             VALUES ($1, $2, $3, NOW(), $4)`,
-              [item_id, 'OUT', approved_quantity, approved_by]
+              `INSERT INTO inventory_logs 
+               (item_id, type, quantity, created_at, created_by, reference_id, balance_after, remark)
+               VALUES ($1, $2, $3, NOW(), $4, $5, $6, $7)`,
+              [
+                item_id,
+                'OUT',
+                approved_quantity,
+                approved_by,
+                `ใบเบิกหมายเลข-#${withdrawId}`,
+                newBalance,
+                note || '',
+              ]
             )
           }
         }

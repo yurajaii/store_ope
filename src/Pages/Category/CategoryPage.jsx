@@ -100,6 +100,7 @@ export default function CategoryPage() {
                 focus:ring-0
                 active:outline-none
                 active:ring-0
+                bg-or
               "
               />
               <button
