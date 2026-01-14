@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { House, Package, Group, FileClock, Menu, X, Files } from 'lucide-react'
 
 export default function SideBar() {
@@ -46,31 +46,56 @@ export default function SideBar() {
 
         {/* Menu */}
         <div className="flex flex-col gap-2 px-3">
-          <MenuItem icon={<House />} label="หน้าแรก" path="/" />
-          <MenuItem icon={<Group />} label="หมวดหมู่" path="/category" />
-          <MenuItem icon={<Package />} label="รายการพัสดุ" path="/items" />
-          <MenuItem icon={<Files />} label="รายการเบิก" path="/withdraw" />
-          <MenuItem icon={<FileClock />} label="การเคลื่อนไหว" path="/logs" />
+          <MenuItem icon={<House size={20} />} label="หน้าแรก" path="/" setOpen={setOpen} />
+          <MenuItem
+            icon={<Group size={20} />}
+            label="หมวดหมู่"
+            path="/category"
+            setOpen={setOpen}
+          />
+          <MenuItem
+            icon={<Package size={20} />}
+            label="รายการพัสดุ"
+            path="/items"
+            setOpen={setOpen}
+          />
+          <MenuItem
+            icon={<Files size={20} />}
+            label="รายการเบิก"
+            path="/withdraw"
+            setOpen={setOpen}
+          />
+          <MenuItem
+            icon={<FileClock size={20} />}
+            label="การเคลื่อนไหว"
+            path="/logs"
+            setOpen={setOpen}
+          />
         </div>
       </aside>
     </>
   )
 }
 
-function MenuItem({ icon, label, path }) {
+function MenuItem({ icon, label, path, setOpen }) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const isActive = location.pathname === path
   return (
     <div
-      className="
+      className={`
         flex items-center gap-3
         p-4 rounded-lg
         transition-colors duration-200
-        hover:bg-hover
         cursor-pointer
-      "
-      onClick={() => navigate(path)}
+        ${isActive ? 'bg-secondary text-white' : 'hover:bg-hover text-white/80 hover:text-white'}
+      `}
+      onClick={() => {
+        navigate(path)
+        if (setOpen) setOpen(false)
+      }}
     >
-      {icon}
+      {icon && <span className={isActive ? 'text-white' : 'text-white/70'}>{icon}</span>}
       <span className="text-lg">{label}</span>
     </div>
   )

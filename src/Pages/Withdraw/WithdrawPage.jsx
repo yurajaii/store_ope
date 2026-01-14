@@ -495,7 +495,7 @@ export default function WithdrawPage() {
                 )}
                 {selectedWithdraw.status === 'REQUESTED' && (
                   <div className="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm">
-                    <label className="block text-sm font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                    <label className="text-sm font-bold text-indigo-900 mb-2 flex items-center gap-2">
                       <span className="bg-indigo-600 w-1.5 h-4 rounded-full inline-block"></span>
                       หมายเหตุการอนุมัติ (ภาพรวม)
                     </label>
