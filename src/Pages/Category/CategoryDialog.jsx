@@ -54,7 +54,10 @@ export default function CategoryDialog({ mode, defaultData, open, onClose, onSub
                 mode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value)
+                console.log(e.target.value)
+              }}
               placeholder="เช่น ไฟฟ้า"
               disabled={mode === 'edit'}
             />

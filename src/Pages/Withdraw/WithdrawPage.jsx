@@ -16,6 +16,7 @@ export default function WithdrawPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedWithdraw, setSelectedWithdraw] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [approveNote, setApproveNote] = useState('')
   const [approvalData, setApprovalData] = useState({})
   const [sortOrder, setSortOrder] = useState('desc')
   const API_URL = import.meta.env.VITE_API_URL
@@ -156,25 +157,101 @@ export default function WithdrawPage() {
   return (
     <>
       <div className="categorypage w-full h-full mt-10">
+        {/* Header */}
         <div className="header flex justify-between px-10 py-8">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">ใบเบิกของฉัน</p>
             <p className="text-gray-400">สามารถดูสถานะใบเบิกได้ที่นี่</p>
           </div>
-          <button className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary">
-            + สร้างใบเบิก
-          </button>
+        </div>
+        {/* Content */}
+        <div className="bg-white px-10 py-4 h-full">
+          {/* Sort Button */}
+          <div className="mb-4">
+            <button
+              onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              เรียงตาม: {sortOrder === 'desc' ? '↓ ใหม่ → เก่า' : '↑ เก่า → ใหม่'}
+            </button>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-indigo-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      ลำดับ
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      วัตถุประสงค์
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      แผนก
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      สถานะ
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      วันที่สร้าง
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      จัดการ
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {sortedList.map((w) => (
+                    <tr key={w.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        #{w.id}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{w.topic.purpose}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{w.topic.department}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                            w.status === 'REQUESTED'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : w.status === 'APPROVED'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {w.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {toThaiTime(w.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => handleOpenDialog(w)}
+                          className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                        >
+                          <Ellipsis className="w-5 h-5 text-gray-500" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
+        {/* Table เก่า */}
         <div className="bg-white px-10 py-10">
-          <div className="grid grid-cols-[80px_1fr_200px_120px_150px_50px] gap-4 font-semibold text-gray-700 pb-3 border-b-2">
+          {/* <div className="grid grid-cols-[80px_1fr_200px_120px_150px_50px] gap-4 font-semibold text-gray-700 pb-3 border-b-2">
             <div>ลำดับ</div>
-            <div>วัตถุประสงค์</div>
+            <div></div>
             <div>แผนก</div>
             <div>สถานะ</div>
             <div>วันที่สร้าง</div>
             <div></div>
-          </div>
+          </div> */}
           <button onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
             เรียงตาม: {sortOrder === 'desc' ? '↓ ใหม่ → เก่า' : '↑ เก่า → ใหม่'}
           </button>
@@ -210,7 +287,7 @@ export default function WithdrawPage() {
           ))}
 
           {withdrawList.length === 0 && (
-            <div className="text-center py-10 text-gray-400">ไม่มีใบเบิก</div>
+            <div className="text-center py-12 text-gray-500">ไม่พบข้อมูลใบเบิก</div>
           )}
         </div>
 
@@ -342,7 +419,8 @@ export default function WithdrawPage() {
 
                                 {/* ปุ่มคืนของ */}
                                 {selectedWithdraw.status === 'APPROVED' &&
-                                  item.approved_quantity > 0 && (
+                                  item.approved_quantity > 0 &&
+                                  item.returned_quantity == 0 && (
                                     <button
                                       onClick={() => handleReturn(item, selectedWithdraw.id)}
                                       className=" text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 w-fit"
@@ -415,6 +493,25 @@ export default function WithdrawPage() {
                     <p className="text-sm text-blue-800">{selectedWithdraw.approved_note}</p>
                   </div>
                 )}
+                {selectedWithdraw.status === 'REQUESTED' && (
+                  <div className="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm">
+                    <label className="block text-sm font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                      <span className="bg-indigo-600 w-1.5 h-4 rounded-full inline-block"></span>
+                      หมายเหตุการอนุมัติ (ภาพรวม)
+                    </label>
+                    <textarea
+                      rows="3"
+                      placeholder="ระบุข้อความเพิ่มเติมถึงผู้เบิก เช่น 'มารับของได้ที่ตึก A ชั้น 2' หรือเหตุผลสรุปการอนุมัติ"
+                      value={approveNote}
+                      onChange={(e) => setApproveNote(e.target.value)}
+                      className="w-full px-4 py-3 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder:text-gray-400 text-sm transition-all"
+                    />
+                    <p className="mt-2 text-xs text-indigo-400">
+                      ** หมายเหตุนี้จะแสดงให้ผู้เบิกเห็นในหน้าสถานะใบเบิก
+                    </p>
+                  </div>
+                )}
+                {}
               </div>
             ) : null}
 

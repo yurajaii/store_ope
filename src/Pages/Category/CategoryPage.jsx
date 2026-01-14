@@ -178,7 +178,7 @@ export default function CategoryPage() {
         mode={editData ? 'edit' : 'add'}
         defaultData={editData}
         onSubmit={async (data) => {
-          if (editData) {
+          if (editData?.id) {
             await axios.put(`${API_URL}/category/${data.id}`, data)
           } else {
             await axios.post(`${API_URL}/category`, data)

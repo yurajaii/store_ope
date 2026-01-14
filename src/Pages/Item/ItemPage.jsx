@@ -77,10 +77,11 @@ export default function Package({ onUpdate }) {
           </div>
         </div>
         {/* Content */}
-        <div className="bg-white w-full px-10 py-10 h-full">
+        <div className=" bg-white px-10 py-4 h-full">
           {/* Search Bar */}
           <div className="flex justify-end gap-2">
             <div className="flex border border-gray-300 rounded px-2 py-2">
+  
               <input
                 type="text"
                 name="search"
@@ -111,10 +112,10 @@ export default function Package({ onUpdate }) {
               <SelectTrigger className="w-40 h-11 border-gray-300">
                 <SelectValue placeholder="หมวดหลัก" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-400!">
                 <SelectItem value="__all__">หมวดหลักทั้งหมด</SelectItem>
                 {mainCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
+                  <SelectItem className="text-gray-500" key={cat} value={cat}>
                     {cat}
                   </SelectItem>
                 ))}

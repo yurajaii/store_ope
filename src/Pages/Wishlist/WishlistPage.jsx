@@ -188,152 +188,159 @@ export default function WishlistPage({ onUpdate }) {
           </button>
         </div>
 
+        {/* Content */}
         <div className="bg-white px-10 py-10">
-          {wishlist.map((w) => (
-            <div key={w.item_id} className="flex items-center gap-3 py-2 border-b">
-              <input
-                type="checkbox"
-                checked={selectedItems[w.item_id] || false}
-                onChange={() => handleCheckbox(w.item_id)}
-                className="w-5 h-5 accent-black bg-white border-2 border-gray-300 rounded cursor-pointer"
-              />
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            {wishlist.length === 0 && (
+              <div className="text-center py-12 text-gray-500">ยังไม่มีพัสดุในตระกร้า</div>
+            )}
+            {wishlist.map((w) => (
+              <div key={w.item_id} className="flex items-center justify-between gap-3 p-2 pl-8 border-b hover:bg-blue-100">
+                <input
+                  type="checkbox"
+                  checked={selectedItems[w.item_id] || false}
+                  onChange={() => handleCheckbox(w.item_id)}
+                  className="w-5 h-5 accent-black bg-white border-2 border-gray-300 rounded cursor-pointer"
+                />
 
-              <div className="font-medium flex-1">{w.name}</div>
-
-              <div className="flex items-center gap-2 border border-gray-300 rounded">
-                <div className="text-center font-semibold px-3">{w.default_quantity}</div>
-
-                <div className="flex flex-col border-l">
+                <div className="font-base flex-1">{w.name}</div>
+                <div className="flex items-center border-gray-300 rounded">
                   <button
-                    className="px-2 py-1 hover:bg-gray-100 border-b"
-                    onClick={() => handleIncrease(w.item_id, w.default_quantity)}
-                  >
-                    +
-                  </button>
-                  <button
-                    className="px-2 py-1 hover:bg-gray-100"
+                    className="flex items-center justify-center  w-4 h-4 bg-gray-300 hover:bg-gray-400 text-black text-s rounded"
                     onClick={() => handleDecrease(w.item_id, w.default_quantity)}
                   >
                     -
                   </button>
+                  <div className="text-center px-3 ">{w.default_quantity}</div>
+
+                  <button
+                    className="flex items-center justify-center w-4 h-4 bg-gray-300 hover:bg-gray-400 text-black text-s border-b border-gray-300 rounded"
+                    onClick={() => handleIncrease(w.item_id, w.default_quantity)}
+                  >
+                    +
+                  </button>
+                </div>
+                <div
+                  className="p-2 text-red-400 cursor-pointer  hover:bg-red-100 rounded-full transition-colors disabled:opacity-30"
+                  xxxxx
+                  onClick={() => handleDelete(w.item_id)}
+                >
+                  <Trash2 size={20} />
                 </div>
               </div>
-              <div className="text-red-400 cursor-pointer">
-                <Trash2 onClick={() => handleDelete(w.item_id)} />
+            ))}
+          </div>
+
+          {/* Dialog */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="font-[prompt] max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>ยืนยันการเบิกพัสดุ</DialogTitle>
+              </DialogHeader>
+
+              <div className="py-4 space-y-4">
+                {/* ชื่อ-นามสกุล */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    ชื่อ-นามสกุล <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น รุ่งรวง วิบูญานนท์"
+                    value={formData.fullname}
+                    onChange={(e) => handleInputChange('fullname', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* เบอร์โทร */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    เบอร์โทรศัพท์ <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น 6058"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* แผนก */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    แผนก/หน่วยงาน <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น กองอาคารและสิ่งแวดล้อม [20105]"
+                    value={formData.department}
+                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* วัตถุประสงค์ */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    วัตถุประสงค์ <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น ทดแทนของเก่าที่หมด แผนซ่อมบำรุง"
+                    value={formData.purpose}
+                    onChange={(e) => handleInputChange('purpose', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* โครงการ/กิจกรรม */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    โครงการ/กิจกรรม <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น กิจกรรมปี เสาหรุส"
+                    value={formData.project}
+                    onChange={(e) => handleInputChange('project', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* รายการที่เลือก */}
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium mb-2">รายการที่เลือก:</p>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {wishlist
+                      .filter((w) => selectedItems[w.item_id])
+                      .map((w) => (
+                        <li key={w.item_id}>
+                          • {w.name} (จำนวน: {w.default_quantity})
+                        </li>
+                      ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          ))}
+
+              <DialogFooter>
+                <button
+                  onClick={() => setDialogOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleSubmitWithdraw}
+                  className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded ml-2"
+                >
+                  ยืนยันการเบิก
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-
-        {/* Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="font-[prompt] max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>ยืนยันการเบิกพัสดุ</DialogTitle>
-            </DialogHeader>
-
-            <div className="py-4 space-y-4">
-              {/* ชื่อ-นามสกุล */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  ชื่อ-นามสกุล <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น รุ่งรวง วิบูญานนท์"
-                  value={formData.fullname}
-                  onChange={(e) => handleInputChange('fullname', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* เบอร์โทร */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  เบอร์โทรศัพท์ <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น 6058"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* แผนก */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  แผนก/หน่วยงาน <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น กองอาคารและสิ่งแวดล้อม [20105]"
-                  value={formData.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* วัตถุประสงค์ */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  วัตถุประสงค์ <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น ทดแทนของเก่าที่หมด แผนซ่อมบำรุง"
-                  value={formData.purpose}
-                  onChange={(e) => handleInputChange('purpose', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* โครงการ/กิจกรรม */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  โครงการ/กิจกรรม <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น กิจกรรมปี เสาหรุส"
-                  value={formData.project}
-                  onChange={(e) => handleInputChange('project', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* รายการที่เลือก */}
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-2">รายการที่เลือก:</p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  {wishlist
-                    .filter((w) => selectedItems[w.item_id])
-                    .map((w) => (
-                      <li key={w.item_id}>
-                        • {w.name} (จำนวน: {w.default_quantity})
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <button
-                onClick={() => setDialogOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={handleSubmitWithdraw}
-                className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded ml-2"
-              >
-                ยืนยันการเบิก
-              </button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </>
   )

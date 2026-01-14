@@ -5,6 +5,8 @@ import { ShoppingBasket } from 'lucide-react'
 export default function ItemTable({ data = [], onUpdate }) {
   const API_URL = import.meta.env.VITE_API_URL
   const [quantities, setQuantities] = useState({})
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   if (data.length === 0) {
     return (
@@ -33,30 +35,40 @@ export default function ItemTable({ data = [], onUpdate }) {
     <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* {console.log(data)} */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="min-w-full divide-y divide-gray-200">
           {/* Table Header */}
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700">รหัสพัสดุ</th>
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700">ชื่อพัสดุ</th>
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700">หมวดหมู่</th>
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700 text-center">สถานะ</th>
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700 text-right">
+          <thead className="bg-indigo-50">
+            <tr>
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
+                รหัสพัสดุ
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
+                ชื่อพัสดุ
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
+                หมวดหมู่
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
+                สถานะ
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
                 จำนวนในคลัง
               </th>
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700 text-center">
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
                 จำนวนเบิก
               </th>
-              <th className="px-6 py-4 text-sm font-semibold text-gray-700 text-center">จัดการ</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-indigo-900 uppercase tracking-wider">
+                จัดการ
+              </th>
             </tr>
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="bg-white divide-y divide-gray-200">
             {data
               .sort((a, b) => a.item_id - b.item_id)
               .map((item) => (
-                <tr key={item.item_id} className="hover:bg-blue-50/50 transition-colors">
+                <tr key={item.item_id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">#{item.item_id}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{item.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">
@@ -104,6 +116,28 @@ export default function ItemTable({ data = [], onUpdate }) {
               ))}
           </tbody>
         </table>
+        {/* Pagination UI */}
+        <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-t">
+          <p className="text-sm text-gray-600">
+            หน้า {page} จาก {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((prev) => prev - 1)}
+              className="px-4 py-2 border rounded shadow-sm bg-white disabled:opacity-50"
+            >
+              ก่อนหน้า
+            </button>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((prev) => prev + 1)}
+              className="px-4 py-2 border rounded shadow-sm bg-white disabled:opacity-50"
+            >
+              ถัดไป
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -95,9 +95,9 @@ export default function LogPage() {
           </div>
         </div>
 
-        <div className=" bg-white px-10 py-4 h-fit">
+        <div className=" bg-white px-10 py-4 h-full">
           {/* Filters */}
-          <div className="bg-white p-6 mb-6">
+          <div className="bg-white p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -142,7 +142,7 @@ export default function LogPage() {
           </div>
 
           {/* Logs Table */}
-          <div className="bg-white rounded-lg shadow-md overflow-y-hidden">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -183,11 +183,11 @@ export default function LogPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {toThaiTime(log.created_at)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {log.item_name}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{log.item_name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {log.category_name} :: {log.subcategory_name}
+                          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                            {log.category_name} :: {log.subcategory_name}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -198,7 +198,7 @@ export default function LogPage() {
                             {getActionText(log.type)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                        <td className="px-6 py-4 text-sm text-right font-semibold text-gray-700">
                           {log.quantity > 0 ? '+' : ''}
                           {log.quantity}
                         </td>
