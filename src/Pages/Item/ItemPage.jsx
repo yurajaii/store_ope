@@ -60,6 +60,13 @@ export default function Package({ onUpdate }) {
     }
   }
 
+  const handleItemUpdate = async () => {
+    await fetchItems()
+    if (onUpdate) {
+      await onUpdate()
+    }
+  }
+
   useEffect(() => {
     fetchCategory()
     fetchItems()
@@ -81,7 +88,6 @@ export default function Package({ onUpdate }) {
           {/* Search Bar */}
           <div className="flex justify-end gap-2">
             <div className="flex border border-gray-300 rounded px-2 py-2">
-  
               <input
                 type="text"
                 name="search"
@@ -96,7 +102,7 @@ export default function Package({ onUpdate }) {
                 active:ring-0
               "
               />
-              <button className="text-gray-400">
+              <button className="text-gray-400" onClick={() => setSearchQuery('')}>
                 <CircleX />
               </button>
             </div>
@@ -126,7 +132,7 @@ export default function Package({ onUpdate }) {
             <Select
               value={selectedSubchainId}
               onValueChange={setSelectedSubchainId}
-              disabled={selectedCategory === '__all__'} // ปิดถ้ายังไม่เลือกหมวดหลัก (Optional)
+              disabled={selectedCategory === '__all__'}
             >
               <SelectTrigger className="w-40 h-11 border-gray-300">
                 <SelectValue placeholder="หมวดย่อย" />
@@ -174,7 +180,7 @@ export default function Package({ onUpdate }) {
           </div>
 
           {/* Main Content */}
-          <ItemTable data={filteredItems} onUpdate={onUpdate} />
+          <ItemTable data={filteredItems} onUpdate={handleItemUpdate} categories={categories} />
         </div>
       </div>
 
@@ -186,14 +192,14 @@ export default function Package({ onUpdate }) {
         onSubmit={async (payload) => {
           await axios.post(`${API_URL}/items`, payload)
           setDialogOpen(false)
-          fetchItems()
+          handleItemUpdate()
         }}
       />
       <InventoryDialog
         open={inventoryDialogOpen}
         onClose={() => setInventoryDialogOpen(false)}
         items={items}
-        onUpdate={fetchItems}
+        onUpdate={handleItemUpdate}
       />
     </>
   )

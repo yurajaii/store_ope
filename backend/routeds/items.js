@@ -24,7 +24,7 @@ export default function ItemList(db) {
   })
 
   router.post('/', async (req, res) => {
-    const { category_id, name, unit } = req.body
+    const { category_id, name, unit, min_threshold, max_threshold } = req.body
     const createdBy = req.user?.id ?? 1
 
     if (!category_id || !name || !unit) {
@@ -53,11 +53,11 @@ export default function ItemList(db) {
 
       const itemRes = await client.query(
         `
-      INSERT INTO items (category_id, name, unit, created_by)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO items (category_id, name, unit, created_by, min_threshold, max_threshold)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
       `,
-        [category_id, name, unit, createdBy]
+        [category_id, name, unit, createdBy, min_threshold, max_threshold]
       )
 
       const itemId = itemRes.rows[0].id
@@ -154,5 +154,49 @@ export default function ItemList(db) {
       })
     }
   })
+
+  router.patch('/:id', async (req, res) => {
+    const id = req.params.id
+    const { category_id, name, unit, min_threshold, max_threshold } = req.body
+
+    try {
+      const checkItem = await db.query('SELECT id FROM items WHERE id = $1', [id])
+      if (checkItem.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Item not found',
+        })
+      }
+
+      const query = `
+      UPDATE items 
+      SET 
+        category_id = $1, 
+        name = $2, 
+        unit = $3, 
+        min_threshold = $4, 
+        max_threshold = $5
+      WHERE id = $6
+      RETURNING *
+    `
+      const values = [category_id, name, unit, min_threshold || 0, max_threshold || 0, id]
+
+      const result = await db.query(query, values)
+
+      return res.json({
+        success: true,
+        message: 'อัปเดตข้อมูลพัสดุเรียบร้อยแล้ว',
+        data: result.rows[0],
+      })
+    } catch (error) {
+      console.error('Update item error:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล',
+        error: error.message,
+      })
+    }
+  })
+
   return router
 }

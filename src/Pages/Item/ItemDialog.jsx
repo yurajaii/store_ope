@@ -29,7 +29,8 @@ export default function ItemDialog({
   const [subcategoryId, setSubcategoryId] = useState('')
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
-
+  const [maxThreshold, setMaxThreshold] = useState('')
+  const [minThreshold, setMinThreshold] = useState('')
   // preload / reset
   useEffect(() => {
     if (mode === 'edit' && defaultData) {
@@ -37,11 +38,15 @@ export default function ItemDialog({
       setSubcategoryId(defaultData.category_id?.toString() || '')
       setName(defaultData.name || '')
       setUnit(defaultData.unit || '')
+      setMinThreshold(defaultData.min_threshold || '')
+      setMaxThreshold(defaultData.max_threshold || '')
     } else {
       setCategory('')
       setSubcategoryId('')
       setName('')
       setUnit('')
+      setMinThreshold('')
+      setMaxThreshold('')
     }
   }, [mode, defaultData, open])
 
@@ -56,13 +61,15 @@ export default function ItemDialog({
       category_id: Number(subcategoryId),
       name,
       unit,
+      min_threshold: Number(minThreshold),
+      max_threshold: Number(maxThreshold),
     })
     onClose()
   }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md font-[prompt]">
+      <DialogContent className=" font-[prompt] max-w-1/2 w-fit">
         <DialogHeader>
           <DialogTitle>{mode === 'add' ? 'เพิ่มพัสดุ' : 'แก้ไขพัสดุ'}</DialogTitle>
           <DialogDescription>กรอกข้อมูลพัสดุและเลือกหมวดหมู่ให้ถูกต้อง</DialogDescription>
@@ -129,6 +136,39 @@ export default function ItemDialog({
               onChange={(e) => setUnit(e.target.value)}
               placeholder="เช่น ชิ้น / กล่อง / แพ็ค"
             />
+          </div>
+
+          {/* Threshold */}
+          <div className="flex flex-col">
+            {/* inpit */}
+            <div className="flex-2 flex gap-1">
+              {/* min */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium">จำนวนต่ำสุด</label>
+                <input
+                  type="number"
+                  className="border p-2 rounded"
+                  value={minThreshold}
+                  onChange={(e) => setMinThreshold(e.target.value)}
+                  placeholder="จำนวนต่ำสุด"
+                />
+              </div>
+              {/* max */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium">จำนวนสูงสุด</label>
+                <input
+                  type="number"
+                  className="border p-2 rounded"
+                  value={maxThreshold}
+                  onChange={(e) => setMaxThreshold(e.target.value)}
+                  placeholder="จำนวนสูงสุด"
+                />
+              </div>
+            </div>
+            {/* label */}
+            <p className="text-xs text-gray-500 mt-2">
+              จำนวนนี้คืออะไร? เป็นจำนวนที่ระบบตรวจจับ และจะแจ้งเตือนหากเกินช่วงตัวเลขนี้
+            </p>
           </div>
         </div>
 
