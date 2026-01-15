@@ -19,12 +19,18 @@ export default function WithdrawPage() {
   const [approveNote, setApproveNote] = useState('')
   const [approvalData, setApprovalData] = useState({})
   const [sortOrder, setSortOrder] = useState('desc')
+
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const limit = 20
+
   const API_URL = import.meta.env.VITE_API_URL
 
   const fetchWithdrawList = async () => {
     try {
-      const res = await axios.get(`${API_URL}/withdraw`)
+      const res = await axios.get(`${API_URL}/withdraw?page=${page}&limit=${limit}`)
       setWithdrawList(res.data.withdrawn)
+      setTotalPages(res.data.pagination.totalPages)
     } catch (err) {
       console.error(err)
     }
@@ -36,7 +42,6 @@ export default function WithdrawPage() {
       const res = await axios.get(`${API_URL}/withdraw/${withdrawId}`)
       setSelectedWithdraw(res.data.withdraw)
 
-      // เตรียมข้อมูลสำหรับอนุมัติ (default = อนุมัติเต็มจำนวน)
       const initialApproval = {}
       res.data.withdraw.items?.forEach((item) => {
         initialApproval[item.withdraw_item_id] = {
@@ -152,7 +157,7 @@ export default function WithdrawPage() {
 
   useEffect(() => {
     fetchWithdrawList()
-  }, [])
+  }, [page])
 
   return (
     <>
@@ -239,53 +244,29 @@ export default function WithdrawPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
-
-        {/* Table เก่า */}
-        <div className="bg-white px-10 py-10">
-          {/* <div className="grid grid-cols-[80px_1fr_200px_120px_150px_50px] gap-4 font-semibold text-gray-700 pb-3 border-b-2">
-            <div>ลำดับ</div>
-            <div></div>
-            <div>แผนก</div>
-            <div>สถานะ</div>
-            <div>วันที่สร้าง</div>
-            <div></div>
-          </div> */}
-          <button onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
-            เรียงตาม: {sortOrder === 'desc' ? '↓ ใหม่ → เก่า' : '↑ เก่า → ใหม่'}
-          </button>
-          {sortedList.map((w) => (
-            <div
-              key={w.id}
-              className="grid grid-cols-[80px_1fr_200px_120px_150px_50px] gap-4 items-center py-3 border-b hover:bg-gray-50"
-            >
-              <div className="font-semibold">#{w.id}</div>
-              <div className="truncate">{w.topic.purpose}</div>
-              <div className="text-sm text-gray-600 truncate">{w.topic.department}</div>
-              <div>
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                    w.status === 'REQUESTED'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : w.status === 'APPROVED'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}
+            {/* Pagination UI */}
+            <div className="flex justify-between items-center px-10 py-4 bg-gray-50 border-t border-gray-200">
+              <p className="text-sm text-gray-600 font-[prompt]">
+                หน้า <span className="font-semibold text-indigo-600">{page}</span> จาก {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => prev - 1)}
+                  className="px-4 py-2 text-sm font-medium border rounded-lg shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-all font-[prompt]"
                 >
-                  {w.status}
-                </span>
-              </div>
-              <div className="text-sm text-gray-600">{toThaiTime(w.created_at)}</div>
-              <div>
-                <Ellipsis
-                  onClick={() => handleOpenDialog(w)}
-                  className="cursor-pointer hover:bg-gray-200 rounded p-1"
-                />
+                  ก่อนหน้า
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((prev) => prev + 1)}
+                  className="px-4 py-2 text-sm font-medium border rounded-lg shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-all font-[prompt]"
+                >
+                  ถัดไป
+                </button>
               </div>
             </div>
-          ))}
-
+          </div>
           {withdrawList.length === 0 && (
             <div className="text-center py-12 text-gray-500">ไม่พบข้อมูลใบเบิก</div>
           )}

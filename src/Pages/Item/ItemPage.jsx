@@ -23,6 +23,10 @@ export default function Package({ onUpdate }) {
 
   const API_URL = import.meta.env.VITE_API_URL
 
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const limit = 20
+
   const mainCategories = [...new Set(categories.map((c) => c.category))]
 
   const availableSubcategories = categories.filter(
@@ -53,8 +57,9 @@ export default function Package({ onUpdate }) {
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get(`${API_URL}/items`)
-      setItems(res.data.items)
+      const res = await axios.get(`${API_URL}/items?page=${page}&limit=${limit}`)
+      setItems(res.data.items || res.data.inventory || [])
+      setTotalPages(res.data.pagination?.totalPages || 1)
     } catch (error) {
       console.error(error)
     }
@@ -68,11 +73,12 @@ export default function Package({ onUpdate }) {
   }
 
   useEffect(() => {
-    fetchCategory()
     fetchItems()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [page])
 
+  useEffect(() => {
+    fetchCategory()
+  }, [])
   return (
     <>
       <div className="categorypage w-full h-full mt-10">
@@ -180,7 +186,14 @@ export default function Package({ onUpdate }) {
           </div>
 
           {/* Main Content */}
-          <ItemTable data={filteredItems} onUpdate={handleItemUpdate} categories={categories} />
+          <ItemTable
+            data={filteredItems}
+            onUpdate={handleItemUpdate}
+            categories={categories}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       </div>
 

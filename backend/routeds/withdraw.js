@@ -3,16 +3,38 @@ import express from 'express'
 const router = express.Router()
 
 export default function Withdraw(db) {
-  // ==============================================================================================================
   router.get('/', async (req, res) => {
-    const result = await db.query(` 
-      SELECT * FROM withdraws`)
-    return res.json({
-      success: true,
-      withdrawn: result.rows,
-    })
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const offset = (page - 1) * limit
+    try {
+      const result = await db.query(
+        `SELECT * FROM withdraws 
+       ORDER BY created_at DESC -- แนะนำให้เรียงตามวันที่เบิกล่าสุด
+       LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      )
+      const countResult = await db.query(`SELECT COUNT(*) FROM withdraws`)
+      const totalItems = parseInt(countResult.rows[0].count)
+      const totalPages = Math.ceil(totalItems / limit)
+      return res.json({
+        success: true,
+        withdrawn: result.rows,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      })
+    } catch (error) {
+      console.error('Get withdraw error:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Database Error',
+      })
+    }
   })
-  // ==============================================================================================================
 
   router.post('/', async (req, res) => {
     const { items, requestedBy, topic } = req.body

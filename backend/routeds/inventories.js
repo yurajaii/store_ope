@@ -4,17 +4,42 @@ const router = express.Router()
 
 export default function InventoryList(db) {
   router.get('/', async (req, res) => {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20
+    const offset = (page - 1) * limit
     try {
-      const inv = await db.query(`
-      SELECT i.item_id,items."name",i.quantity,items.unit
+      const inv = await db.query(
+        `
+      SELECT i.item_id, items."name", i.quantity, items.unit
       FROM inventories AS i
       LEFT JOIN items ON items.id = i.item_id
       LEFT JOIN categories AS c ON c.id = items.category_id
       WHERE items.is_active = true
-      `)
+      ORDER BY i.item_id DESC
+      LIMIT $1 OFFSET $2
+    `,
+        [limit, offset]
+      )
+
+      const count = await db.query(`
+      SELECT COUNT(*) 
+      FROM inventories AS i
+      LEFT JOIN items ON items.id = i.item_id
+      WHERE items.is_active = true
+    `)
+
+      const totalItems = parseInt(count.rows[0].count)
+      const totalPages = Math.ceil(totalItems / limit)
+
       return res.json({
         success: true,
         inventory: inv.rows,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
       })
     } catch (error) {
       console.log('Get item error:', error)
@@ -154,11 +179,12 @@ export default function InventoryList(db) {
       client.release()
     }
   })
+
   router.get('/log', async (req, res) => {
     // 1. เพิ่มการรับค่า page และ limit จาก query
     const { start_date, end_date, category_id, item_id } = req.query
     const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 20 
+    const limit = parseInt(req.query.limit) || 20
     const offset = (page - 1) * limit
 
     try {

@@ -3,11 +3,16 @@ import { useState } from 'react'
 import { ShoppingBasket, Pencil } from 'lucide-react'
 import ItemDialog from './ItemDialog'
 
-export default function ItemTable({ data = [], onUpdate, categories = [] }) {
+export default function ItemTable({
+  data = [],
+  onUpdate,
+  categories = [],
+  page,
+  totalPages,
+  onPageChange,
+}) {
   const API_URL = import.meta.env.VITE_API_URL
   const [quantities, setQuantities] = useState({})
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
 
@@ -90,9 +95,7 @@ export default function ItemTable({ data = [], onUpdate, categories = [] }) {
                 .sort((a, b) => a.item_id - b.item_id)
                 .map((item) => (
                   <tr key={item.item_id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      #{item.item_id}
-                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">#{item.item_id}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{item.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <span className="bg-gray-100 px-2 py-1 rounded text-xs">
@@ -102,9 +105,7 @@ export default function ItemTable({ data = [], onUpdate, categories = [] }) {
                     <td className="px-6 py-4 text-sm text-center">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                          item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}
                       >
                         {item.is_active ? 'Active' : 'Inactive'}
@@ -158,20 +159,20 @@ export default function ItemTable({ data = [], onUpdate, categories = [] }) {
           {/* Pagination UI */}
           <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-t">
             <p className="text-sm text-gray-600">
-              หน้า {page} จาก {totalPages}
+              หน้า <span className="font-semibold text-indigo-600">{page}</span> จาก {totalPages}
             </p>
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage((prev) => prev - 1)}
-                className="px-4 py-2 border rounded shadow-sm bg-white disabled:opacity-50"
+                onClick={() => onPageChange(page - 1)} // แจ้งตัวแม่ว่าขอลดหน้า
+                className="px-4 py-2 text-sm border rounded shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 ก่อนหน้า
               </button>
               <button
                 disabled={page >= totalPages}
-                onClick={() => setPage((prev) => prev + 1)}
-                className="px-4 py-2 border rounded shadow-sm bg-white disabled:opacity-50"
+                onClick={() => onPageChange(page + 1)} // แจ้งตัวแม่ว่าขอเพิ่มหน้า
+                className="px-4 py-2 text-sm border rounded shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 ถัดไป
               </button>

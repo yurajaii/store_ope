@@ -4,24 +4,41 @@ const router = express.Router()
 
 export default function ItemList(db) {
   router.get('/', async (req, res) => {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20
+    const offset = (page - 1) * limit
     try {
-      const result = await db.query(`SELECT *
-      FROM inventories AS inv
-      LEFT JOIN items AS i ON inv.item_id = i.id
-      LEFT JOIN categories AS c ON i.category_id = c.id`)
+      const dataResult = await db.query(
+        `SELECT inv.*, i.name, i.unit, i.is_active, i.min_threshold, i.max_threshold, c.category, c.subcategory
+         FROM inventories AS inv
+         LEFT JOIN items AS i ON inv.item_id = i.id
+         LEFT JOIN categories AS c ON i.category_id = c.id
+         ORDER BY inv.id DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      )
 
+      const countResult = await db.query(`SELECT COUNT(*) FROM inventories`)
+      const totalItems = parseInt(countResult.rows[0].count)
+      const totalPages = Math.ceil(totalItems / limit)
       return res.json({
         success: true,
-        items: result.rows,
-      })
-    } catch (error) {
-      console.log('Get item error:', error)
+        items: dataResult.rows,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      })} catch (error) {
+      console.log('Get item error:', error);
       return res.status(500).json({
         success: false,
         message: 'Database Error',
-      })
+      });
     }
-  })
+  });
+
 
   router.post('/', async (req, res) => {
     const { category_id, name, unit, min_threshold, max_threshold } = req.body

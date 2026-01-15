@@ -5,8 +5,13 @@ import toThaiTime from '@/Utils/toThaiTime'
 export default function LogPage() {
   const API_URL = import.meta.env.VITE_API_URL
   const [logs, setLogs] = useState([])
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const firstDay = `${year}-${month}-01`
+  const today = now.toISOString().split('T')[0]
+  const [startDate, setStartDate] = useState(firstDay)
+  const [endDate, setEndDate] = useState(today)
   const [categories, setCategories] = useState([])
   const [categoryId, setCategoryId] = useState('')
   const [loading, setLoading] = useState(false)
