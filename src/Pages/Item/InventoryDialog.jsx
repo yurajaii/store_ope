@@ -74,9 +74,9 @@ export default function InventoryDialog({ open, onClose, items = [], onUpdate })
             <label className="text-sm font-medium">เลือกพัสดุ</label>
             <Select value={selectedItemId} onValueChange={setSelectedItemId}>
               <SelectTrigger>
-                <SelectValue placeholder="เลือกรายการพัสดุ..." />
+                <SelectValue placeholder="เลือกรายการพัสดุ" />
               </SelectTrigger>
-              <SelectContent className="font-[prompt]">
+              <SelectContent className="font-[prompt] max-h-75 overflow-y-auto">
                 {items.map((item) => (
                   <SelectItem key={item.item_id} value={item.item_id.toString()}>
                     {item.name} (คงเหลือ: {item.quantity})

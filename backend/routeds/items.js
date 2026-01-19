@@ -3,41 +3,93 @@ import express from 'express'
 const router = express.Router()
 
 export default function ItemList(db) {
-  router.get('/', async (req, res) => {
-    const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 20
-    const offset = (page - 1) * limit
-    try {
-      const dataResult = await db.query(
-        `SELECT inv.*, i.name, i.unit, i.is_active, i.min_threshold, i.max_threshold, c.category, c.subcategory
-         FROM inventories AS inv
-         LEFT JOIN items AS i ON inv.item_id = i.id
-         LEFT JOIN categories AS c ON i.category_id = c.id
-         ORDER BY inv.id DESC
-         LIMIT $1 OFFSET $2`,
-        [limit, offset]
-      )
+router.get('/', async (req, res) => {
+  const page = parseInt(req.query.page) || 1
+  const limit = parseInt(req.query.limit) || 20
+  const offset = (page - 1) * limit
+  
+  // รับ query parameters
+  const searchQuery = req.query.search || ''
+  const categoryId = req.query.category_id || null
+  const mainCategory = req.query.main_category || null
 
-      const countResult = await db.query(`SELECT COUNT(*) FROM inventories`)
-      const totalItems = parseInt(countResult.rows[0].count)
-      const totalPages = Math.ceil(totalItems / limit)
-      return res.json({
-        success: true,
-        items: dataResult.rows,
-        pagination: {
-          totalItems,
-          totalPages,
-          currentPage: page,
-          limit,
-        },
-      })} catch (error) {
-      console.log('Get item error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Database Error',
-      });
+  try {
+    // สร้าง WHERE clause แบบ dynamic
+    let whereConditions = []
+    let queryParams = []
+    let paramIndex = 1
+
+    // Filter by search (ชื่อหรือ item_id)
+    if (searchQuery) {
+      whereConditions.push(`(i.name ILIKE $${paramIndex} OR i.id::text LIKE $${paramIndex})`)
+      queryParams.push(`%${searchQuery}%`)
+      paramIndex++
     }
-  });
+
+    // Filter by category_id (หมวดย่อย)
+    if (categoryId) {
+      whereConditions.push(`i.category_id = $${paramIndex}`)
+      queryParams.push(categoryId)
+      paramIndex++
+    }
+
+    // Filter by main category (หมวดหลัก)
+    if (mainCategory) {
+      whereConditions.push(`c.category = $${paramIndex}`)
+      queryParams.push(mainCategory)
+      paramIndex++
+    }
+
+    const whereClause = whereConditions.length > 0 
+      ? 'WHERE ' + whereConditions.join(' AND ') 
+      : ''
+
+    // Query ข้อมูล
+    const dataQuery = `
+      SELECT inv.*, i.name, i.unit, i.is_active, i.min_threshold, i.max_threshold, 
+             c.category, c.subcategory, i.category_id
+      FROM inventories AS inv
+      LEFT JOIN items AS i ON inv.item_id = i.id
+      LEFT JOIN categories AS c ON i.category_id = c.id
+      ${whereClause}
+      ORDER BY inv.id DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `
+    
+    queryParams.push(limit, offset)
+    const dataResult = await db.query(dataQuery, queryParams)
+
+    // นับจำนวนทั้งหมดที่ตรงกับ filter
+    const countQuery = `
+      SELECT COUNT(*) 
+      FROM inventories AS inv
+      LEFT JOIN items AS i ON inv.item_id = i.id
+      LEFT JOIN categories AS c ON i.category_id = c.id
+      ${whereClause}
+    `
+    const countResult = await db.query(countQuery, queryParams.slice(0, -2))
+    
+    const totalItems = parseInt(countResult.rows[0].count)
+    const totalPages = Math.ceil(totalItems / limit)
+
+    return res.json({
+      success: true,
+      items: dataResult.rows,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    })
+  } catch (error) {
+    console.log('Get item error:', error)
+    return res.status(500).json({
+      success: false,
+      message: 'Database Error',
+    })
+  }
+})
 
 
   router.post('/', async (req, res) => {

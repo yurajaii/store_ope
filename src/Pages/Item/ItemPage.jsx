@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
- 
+
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { CircleX } from 'lucide-react'
@@ -34,19 +34,6 @@ export default function Package({ onUpdate }) {
   const availableSubcategories = categories.filter(
     (c) => selectedCategory === '__all__' || c.category === selectedCategory
   )
-  const filteredItems = items.filter((item) => {
-    const itemMainCat = item.category_name || item.category || ''
-    const matchesMain = selectedCategory === '__all__' || itemMainCat === selectedCategory
-    const matchesSub =
-      selectedSubchainId === '__all__' || item.category_id?.toString() === selectedSubchainId
-
-    // กรองด้วยชื่อสินค้า หรือ รหัสสินค้า
-    const matchesSearch =
-      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.item_id?.toString().includes(searchQuery)
-
-    return matchesMain && matchesSub && matchesSearch
-  })
 
   const fetchCategory = async () => {
     try {
@@ -59,8 +46,25 @@ export default function Package({ onUpdate }) {
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get(`${API_URL}/items?page=${page}&limit=${limit}`)
-      setItems(res.data.items || res.data.inventory || [])
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      })
+
+      if (searchQuery) {
+        params.append('search', searchQuery)
+      }
+
+      if (selectedCategory !== '__all__') {
+        params.append('main_category', selectedCategory)
+      }
+
+      if (selectedSubchainId !== '__all__') {
+        params.append('category_id', selectedSubchainId)
+      }
+
+      const res = await axios.get(`${API_URL}/items?${params.toString()}`)
+      setItems(res.data.items || [])
       setTotalPages(res.data.pagination?.totalPages || 1)
     } catch (error) {
       console.error(error)
@@ -74,26 +78,34 @@ export default function Package({ onUpdate }) {
     }
   }
 
+
+  useEffect(() => {
+    setPage(1)
+    fetchItems()
+  }, [selectedCategory, selectedSubchainId, searchQuery])
+
+ 
   useEffect(() => {
     fetchItems()
-   
   }, [page])
+
 
   useEffect(() => {
     fetchCategory()
   }, [])
+
   return (
     <>
-      <div className="categorypage w-full mt-10">
+      <div className="categorypage w-full h-full mt-10">
         {/* Header */}
-        <div className="header flex justify-between px-10 py-8 ">
+        <div className="header flex justify-between px-10 py-8">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">รายการพัสดุ</p>
             <p className="text-gray-400">ลงเบียน แก้ไข ลบ และจัดการรายพัสดุได้ที่นี่</p>
           </div>
         </div>
         {/* Content */}
-        <div className=" bg-white px-10 py-4 h-full">
+        <div className="bg-white px-10 py-4 h-full">
           {/* Search Bar */}
           <div className="flex justify-end gap-2">
             <div className="flex border border-gray-300 rounded px-2 py-2">
@@ -190,7 +202,7 @@ export default function Package({ onUpdate }) {
 
           {/* Main Content */}
           <ItemTable
-            data={filteredItems}
+            data={items}
             onUpdate={handleItemUpdate}
             categories={categories}
             page={page}

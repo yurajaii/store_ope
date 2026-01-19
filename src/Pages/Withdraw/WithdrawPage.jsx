@@ -68,6 +68,7 @@ export default function WithdrawPage() {
     setDialogOpen(false)
     setSelectedWithdraw(null)
     setApprovalData({})
+    setApproveNote('')
   }
 
   const handleQuantityChange = (itemId, value) => {
@@ -100,7 +101,7 @@ export default function WithdrawPage() {
 
       await axios.post(`${API_URL}/withdraw/${selectedWithdraw.id}/approve`, {
         items,
-        note: 'อนุมัติโดยระบบ',
+        note: approveNote,
       })
 
       alert('อนุมัติสำเร็จ!')
