@@ -18,6 +18,7 @@ export default function LogPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   async function fetchLogs() {
     setLoading(true)
     try {
@@ -27,11 +28,12 @@ export default function LogPage() {
           end_date: endDate,
           category_id: categoryId,
           page: page,
-          limit: 50,
+          limit: 20,
         },
       })
       setLogs(result.data.inventory_log)
-      setTotalPages(result.data.total_pages || 1)
+
+      setTotalPages(result.data.pagination.total_pages || 1)
     } catch (error) {
       console.error(error)
     } finally {
@@ -39,6 +41,7 @@ export default function LogPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchCategory = async () => {
     try {
       const res = await axios.get(`${API_URL}/category`)
@@ -92,7 +95,7 @@ export default function LogPage() {
 
   return (
     <>
-      <div className="LogPage w-full h-full mt-10">
+      <div className="LogPage w-full  mt-10">
         <div className="header flex justify-between px-10 py-8">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">ประวัติการเคลื่อนไหวพัสดุในคลัง</p>

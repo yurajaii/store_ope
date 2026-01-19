@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+ 
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { CircleX } from 'lucide-react'
@@ -74,6 +76,7 @@ export default function Package({ onUpdate }) {
 
   useEffect(() => {
     fetchItems()
+   
   }, [page])
 
   useEffect(() => {
@@ -81,7 +84,7 @@ export default function Package({ onUpdate }) {
   }, [])
   return (
     <>
-      <div className="categorypage w-full h-full mt-10">
+      <div className="categorypage w-full mt-10">
         {/* Header */}
         <div className="header flex justify-between px-10 py-8 ">
           <div className="flex flex-col gap-2">
