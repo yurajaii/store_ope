@@ -6,6 +6,7 @@ import ItemList from './routeds/items.js'
 import InventoryList from './routeds/inventories.js'
 import Withdraw from './routeds/withdraw.js'
 import WishList from './routeds/wishList.js'
+import Reported from './routeds/reports.js'
 
 const port = 3000
 const app = express()
@@ -31,3 +32,4 @@ app.use('/items', ItemList(db))
 app.use('/inventory', InventoryList(db))
 app.use('/withdraw', Withdraw(db))
 app.use('/wishlist', WishList(db))
+app.use('/report', Reported(db))

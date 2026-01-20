@@ -305,11 +305,13 @@ export default function Withdraw(db) {
         wi.quantity AS requested_quantity,
         wi.approved_quantity,
         wi.rejected_quantity,
+        wi.returned_quantity,
         wi.status,
         wi.reject_reason,
         
         i.name,
         i.unit,
+       
         
         c.category,
         

@@ -223,8 +223,8 @@ export default function WithdrawPage() {
                             w.status === 'REQUESTED'
                               ? 'bg-yellow-100 text-yellow-800'
                               : w.status === 'APPROVED'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
                           }`}
                         >
                           {w.status}
@@ -335,8 +335,8 @@ export default function WithdrawPage() {
                         selectedWithdraw.status === 'REQUESTED'
                           ? 'bg-yellow-100 text-yellow-800'
                           : selectedWithdraw.status === 'APPROVED'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
                       }`}
                     >
                       {selectedWithdraw.status}
@@ -369,10 +369,10 @@ export default function WithdrawPage() {
                               item.status === 'approved'
                                 ? 'bg-green-100 text-green-700'
                                 : item.status === 'rejected'
-                                ? 'bg-red-100 text-red-700'
-                                : item.status === 'partial'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
+                                  ? 'bg-red-100 text-red-700'
+                                  : item.status === 'returned'
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-gray-100 text-gray-700'
                             }`}
                           >
                             {item.status || 'pending'}
@@ -410,6 +410,14 @@ export default function WithdrawPage() {
                                     >
                                       คืนของเข้าสต็อก ↺
                                     </button>
+                                  )}
+
+                                {selectedWithdraw.status === 'APPROVED' &&
+                                  item.approved_quantity > 0 &&
+                                  item.returned_quantity > 0 && (
+                                    <p className="font-semibold text-gray-400">
+                                      คืน: {item.returned_quantity} {item.unit}
+                                    </p>
                                   )}
                               </div>
                             ) : (
