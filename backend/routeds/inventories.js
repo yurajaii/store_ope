@@ -7,6 +7,7 @@ export default function InventoryList(db) {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 20
     const offset = (page - 1) * limit
+
     try {
       const inv = await db.query(
         `
@@ -51,11 +52,9 @@ export default function InventoryList(db) {
   })
 
   router.post('/log', async (req, res) => {
-    // 1. รับค่าเพิ่มจาก req.body
     const { item_id, type, quantity, reference_id, remark } = req.body
     const createdBy = req.user?.id ?? 2
 
-    // Validation พื้นฐาน
     if (!item_id || !type || quantity === undefined) {
       return res.status(400).json({
         success: false,
@@ -81,8 +80,6 @@ export default function InventoryList(db) {
 
     try {
       await client.query('BEGIN')
-
-      // 2. ดึงยอดปัจจุบันและ Lock แถวไว้เพื่อป้องกัน Race Condition
       const itemRes = await client.query(
         `
         SELECT inv.quantity
@@ -105,7 +102,6 @@ export default function InventoryList(db) {
       const currentQty = itemRes.rows[0].quantity
       let delta = 0
 
-      // 3. คำนวณส่วนต่าง (Inventory Effect)
       if (type === 'IN' || type === 'RETURN') {
         delta = quantity
       } else if (type === 'OUT') {
@@ -114,10 +110,8 @@ export default function InventoryList(db) {
         delta = quantity
       }
 
-      // 4. คำนวณยอดคงเหลือใหม่ (Balance After)
       const newBalance = currentQty + delta
 
-      // ตรวจสอบสต็อกติดลบ
       if (newBalance < 0) {
         await client.query('ROLLBACK')
         return res.status(400).json({
@@ -126,7 +120,6 @@ export default function InventoryList(db) {
         })
       }
 
-      // 5. บันทึก Log พร้อมข้อมูลใหม่ทั้งหมด
       await client.query(
         `
         INSERT INTO inventory_logs 
@@ -136,7 +129,6 @@ export default function InventoryList(db) {
         [item_id, type, quantity, createdBy, reference_id, newBalance, remark]
       )
 
-      // 6. อัปเดตตารางหลักด้วยยอดที่คำนวณแล้ว
       await client.query(
         `
         UPDATE inventories
@@ -145,7 +137,7 @@ export default function InventoryList(db) {
         `,
         [newBalance, item_id]
       )
-      // 7.กรณีเป็นการคืนสินค้า อัพเดทใน withdraw_id ด้วย
+
       if (type === 'RETURN' && reference_id.startsWith('WITHDRAW-#')) {
         const withdrawId = reference_id.replace('WITHDRAW-#', '')
 
@@ -156,7 +148,6 @@ export default function InventoryList(db) {
           [quantity, withdrawId, item_id]
         )
 
-        // อัปเดตสถานะเป็น 'returned' ถ้าคืนครบตามที่อนุมัติ
         await client.query(
           `UPDATE withdraw_items 
              SET status = 'returned' 
@@ -181,7 +172,6 @@ export default function InventoryList(db) {
   })
 
   router.get('/log', async (req, res) => {
-    // 1. เพิ่มการรับค่า page และ limit จาก query
     const { start_date, end_date, category_id, item_id } = req.query
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 20
@@ -202,7 +192,6 @@ export default function InventoryList(db) {
     `
       const params = []
 
-      // --- ส่วน Filter เหมือนเดิม ---
       if (item_id) {
         params.push(item_id)
         query += ` AND l.item_id = $${params.length}`
@@ -220,7 +209,6 @@ export default function InventoryList(db) {
         query += ` AND l.created_at <= $${params.length}`
       }
 
-      // 2. เพิ่มการเรียงลำดับ และ LIMIT / OFFSET
       query += ` ORDER BY l.created_at DESC, l.id DESC `
 
       params.push(limit)
@@ -231,7 +219,6 @@ export default function InventoryList(db) {
 
       const result = await db.query(query, params)
 
-      // 3. คำนวณข้อมูลหน้า
       const totalItems = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0
       const totalPages = Math.ceil(totalItems / limit)
       const logs = result.rows.map((row) => {

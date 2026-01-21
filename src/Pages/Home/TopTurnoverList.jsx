@@ -4,7 +4,7 @@ import { TrendingUp, Package } from 'lucide-react'
 const TopTurnoverList = ({ data }) => {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-md w-full">
+      <div className="bg-white p-6 rounded-xl shadow-md w-full overflow-y-auto h-125 ">
         <h2 className="text-xl font-bold mb-4">พัสดุที่มีการเบิกสูงสุด (Top Turnover)</h2>
         <div className="text-center py-8 text-gray-400">ไม่มีข้อมูลในช่วงเวลาที่เลือก</div>
       </div>
@@ -12,7 +12,7 @@ const TopTurnoverList = ({ data }) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full overflow-y-auto max-h-125">
+    <div className="bg-white p-6 rounded-xl shadow-md w-full overflow-y-auto h-125 ">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-primary" />
         พัสดุที่มีการเบิกสูงสุด (Top Turnover)

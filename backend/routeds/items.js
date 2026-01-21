@@ -8,32 +8,28 @@ router.get('/', async (req, res) => {
   const limit = parseInt(req.query.limit) || 20
   const offset = (page - 1) * limit
   
-  // รับ query parameters
+
   const searchQuery = req.query.search || ''
   const categoryId = req.query.category_id || null
   const mainCategory = req.query.main_category || null
 
   try {
-    // สร้าง WHERE clause แบบ dynamic
     let whereConditions = []
     let queryParams = []
     let paramIndex = 1
 
-    // Filter by search (ชื่อหรือ item_id)
     if (searchQuery) {
       whereConditions.push(`(i.name ILIKE $${paramIndex} OR i.id::text LIKE $${paramIndex})`)
       queryParams.push(`%${searchQuery}%`)
       paramIndex++
     }
 
-    // Filter by category_id (หมวดย่อย)
     if (categoryId) {
       whereConditions.push(`i.category_id = $${paramIndex}`)
       queryParams.push(categoryId)
       paramIndex++
     }
 
-    // Filter by main category (หมวดหลัก)
     if (mainCategory) {
       whereConditions.push(`c.category = $${paramIndex}`)
       queryParams.push(mainCategory)
@@ -44,7 +40,6 @@ router.get('/', async (req, res) => {
       ? 'WHERE ' + whereConditions.join(' AND ') 
       : ''
 
-    // Query ข้อมูล
     const dataQuery = `
       SELECT inv.*, i.name, i.unit, i.is_active, i.min_threshold, i.max_threshold, 
              c.category, c.subcategory, i.category_id
@@ -55,11 +50,9 @@ router.get('/', async (req, res) => {
       ORDER BY inv.id DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
-    
     queryParams.push(limit, offset)
-    const dataResult = await db.query(dataQuery, queryParams)
 
-    // นับจำนวนทั้งหมดที่ตรงกับ filter
+    const dataResult = await db.query(dataQuery, queryParams)
     const countQuery = `
       SELECT COUNT(*) 
       FROM inventories AS inv
@@ -254,14 +247,14 @@ router.get('/', async (req, res) => {
 
       return res.json({
         success: true,
-        message: 'อัปเดตข้อมูลพัสดุเรียบร้อยแล้ว',
+        message: 'Update item successfully',
         data: result.rows[0],
       })
     } catch (error) {
       console.error('Update item error:', error)
       return res.status(500).json({
         success: false,
-        message: 'เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล',
+        message: 'Database Error',
         error: error.message,
       })
     }

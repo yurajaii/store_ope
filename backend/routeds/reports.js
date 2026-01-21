@@ -55,10 +55,9 @@ export default function Reported(db) {
   })
 
   router.get('/usage-trend', async (req, res) => {
-    // 1. ตั้งค่า Default กรณีไม่ได้ส่ง startDate/endDate มา
     const now = new Date()
-    const defaultStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString() // ต้นเดือนนี้
-    const defaultEnd = now.toISOString() // วันนี้
+    const defaultStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const defaultEnd = now.toISOString()
 
     const {
       startDate = defaultStart,
@@ -70,9 +69,6 @@ export default function Reported(db) {
 
     const allowedScales = ['day', 'week', 'month']
     const timeScale = allowedScales.includes(groupBy) ? groupBy : 'day'
-
-    // 2. จัดการ Parameter ให้คงที่
-    // ใช้ $1, $2 เป็นหลักเสมอสำหรับ Date
     let queryParams = [startDate, endDate]
     let categoryFilter = ''
     let itemFilter = ''
@@ -112,7 +108,6 @@ export default function Reported(db) {
   `
 
     try {
-      // ไม่ใช้ .filter(Boolean) เพราะจะทำให้ตำแหน่ง $x เพี้ยน
       const result = await db.query(query, queryParams)
       res.json({ success: true, result: result.rows })
     } catch (error) {
@@ -122,12 +117,18 @@ export default function Reported(db) {
   })
 
   router.get('/top-turnover', async (req, res) => {
-    // ตั้งค่า Default ย้อนหลัง 30 วัน ถ้าไม่ได้ส่งวันที่มา
     const now = new Date()
     const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
     const defaultEnd = now.toISOString()
 
-    const { startDate = defaultStart, endDate = defaultEnd } = req.query
+    const { startDate = defaultStart, endDate = defaultEnd, category_id } = req.query
+    let queryParams = [startDate, endDate]
+    let categoryFilter = ''
+
+    if (category_id) {
+      queryParams.push(category_id)
+      categoryFilter = `AND i.category_id = $${queryParams.length}`
+    }
 
     const query = `
     SELECT 
@@ -137,14 +138,14 @@ export default function Reported(db) {
     FROM inventory_logs il
     JOIN items i ON il.item_id = i.id
     WHERE il.type = 'OUT' 
-      AND il.created_at BETWEEN $1 AND $2
+    AND il.created_at BETWEEN $1 AND $2
+          ${categoryFilter}
     GROUP BY i.name
     ORDER BY total_out DESC
   `
 
     try {
-      // ส่งพารามิเตอร์ $1 และ $2 เสมอ
-      const result = await db.query(query, [startDate, endDate])
+      const result = await db.query(query, queryParams)
       res.json({ success: true, result: result.rows })
     } catch (error) {
       console.error('Top Turnover Error:', error)

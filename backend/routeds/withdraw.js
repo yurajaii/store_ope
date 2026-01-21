@@ -55,7 +55,6 @@ export default function Withdraw(db) {
     try {
       await client.query('BEGIN')
 
-      // 1️⃣ create withdraw
       const withdrawRes = await client.query(
         `
       INSERT INTO withdraws (requested_by, status,topic)
@@ -67,7 +66,6 @@ export default function Withdraw(db) {
 
       const withdrawId = withdrawRes.rows[0].id
 
-      // 2️⃣ insert withdraw_items
       for (const item of items) {
         if (!item.item_id || item.quantity <= 0) {
           throw new Error('Invalid item data')
@@ -102,8 +100,6 @@ export default function Withdraw(db) {
     }
   })
 
-  // Updated withdraw approve route with inventory deduction + logs
-
   router.post('/:withdrawId/approve', async (req, res) => {
     const { withdrawId } = req.params
     const { items, note } = req.body
@@ -122,12 +118,9 @@ export default function Withdraw(db) {
     try {
       await client.query('BEGIN')
 
-      // เก็บข้อมูล item ที่อัพเดทเพื่อใช้ตอนตัดสต็อก (item_id, approved_quantity)
       const itemsToDeduct = []
 
-      // 1. อัพเดททุก item พร้อมกัน
       for (const item of items) {
-        // ดึงข้อมูล withdraw_item (เพิ่ม item_id)
         const withdrawItemRes = await client.query(
           `SELECT quantity, withdraw_id, item_id
          FROM withdraw_items
@@ -144,7 +137,6 @@ export default function Withdraw(db) {
         const requestedQty = withdrawItemRow.quantity
         const rejectedQty = requestedQty - item.approved_quantity
 
-        // กำหนด status
         let status = 'approved'
         if (item.approved_quantity === 0) {
           status = 'rejected'
@@ -152,7 +144,6 @@ export default function Withdraw(db) {
           status = 'partial'
         }
 
-        // อ��พเดท withdraw_item
         await client.query(
           `UPDATE withdraw_items
          SET status = $1,
@@ -172,7 +163,6 @@ export default function Withdraw(db) {
           ]
         )
 
-        // เก็บข้อมูลสำหรับตัดสต็อกภายหลัง (เฉพาะกรณี approved_quantity > 0)
         if (item.approved_quantity > 0) {
           itemsToDeduct.push({
             withdraw_item_id: item.withdraw_item_id,
@@ -182,7 +172,6 @@ export default function Withdraw(db) {
         }
       }
 
-      // 2. เช็คว่าทุก item ใน withdraw นี้ถูก review หรือยัง
       const summary = await client.query(
         `SELECT
          COUNT(*) as total,
@@ -195,7 +184,6 @@ export default function Withdraw(db) {
 
       const { pending_count, total_approved } = summary.rows[0]
 
-      // 3. ถ้า review ครบทุก item แล้ว → อัพเดทสถานะ withdraw
       if (parseInt(pending_count) === 0) {
         const withdrawStatus = parseInt(total_approved) > 0 ? 'APPROVED' : 'REJECTED'
 
@@ -209,12 +197,10 @@ export default function Withdraw(db) {
           [withdrawStatus, approved_by, note, withdrawId]
         )
 
-        // ถ้าเป็น APPROVED ให้ตัดสต็อกจาก inventories และเขียน inventory_logs
         if (withdrawStatus === 'APPROVED') {
           for (const it of itemsToDeduct) {
             const { item_id, approved_quantity } = it
 
-            // 1. หักสต็อกและดึงค่า quantity ใหม่ (new balance) ออกมาทันที
             const invUpdate = await client.query(
               `UPDATE inventories
                SET quantity = quantity - $1
@@ -231,7 +217,6 @@ export default function Withdraw(db) {
 
             const newBalance = invUpdate.rows[0].quantity
 
-            // 2. บันทึก log โดยใช้คอลัมน์ใหม่ที่แก้มารองรับ
             await client.query(
               `INSERT INTO inventory_logs 
                (item_id, type, quantity, created_at, created_by, reference_id, balance_after, remark)
@@ -287,7 +272,6 @@ export default function Withdraw(db) {
     const { id } = req.params
 
     try {
-      // ดึงข้อมูลใบเบิก
       const withdrawResult = await db.query('SELECT * FROM withdraws WHERE id = $1', [id])
 
       if (withdrawResult.rows.length === 0) {
@@ -295,8 +279,6 @@ export default function Withdraw(db) {
       }
 
       const withdraw = withdrawResult.rows[0]
-
-      // ดึงรายการสินค้าพร้อม stock
       const itemsResult = await db.query(
         `
       SELECT 
