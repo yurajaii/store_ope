@@ -1,4 +1,5 @@
 import React from 'react'
+import { TrendingUp } from 'lucide-react'
 import ReactECharts from 'echarts-for-react'
 
 const UsageTrendChart = ({ data }) => {
@@ -69,8 +70,11 @@ const UsageTrendChart = ({ data }) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full  h-125">
-      <h2 className="text-xl font-bold mb-4">แนวโน้มการเบิกจ่ายพัสดุ (Usage Index)</h2>
+    <div className="bg-white p-6 rounded-xl border-gray-300 border w-full  h-125">
+      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <TrendingUp className="w-5 h-5 text-primary" />
+        แนวโน้มการเบิกจ่ายพัสดุ
+      </h2>
       <ReactECharts option={option} style={{ height: '400px' }} opts={{ renderer: 'canvas' }} />
     </div>
   )

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useState } from 'react'
-import { ShoppingBasket, Pencil } from 'lucide-react'
+import { ShoppingBasket, Settings, Trash2, Undo2 } from 'lucide-react'
 import ItemDialog from './ItemDialog'
 
 export default function ItemTable({
@@ -41,6 +41,24 @@ export default function ItemTable({
   const handleEdit = (item) => {
     setSelectedItem(item)
     setEditDialogOpen(true)
+  }
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      await axios.patch(`${API_URL}/items/${itemId}/delete`)
+      await onUpdate()
+    } catch (error) {
+      console.error('Delete error:', error)
+    }
+  }
+
+  const handleRestoreItem = async (itemId) => {
+    try {
+      await axios.patch(`${API_URL}/items/${itemId}/restore`)
+      await onUpdate()
+    } catch (error) {
+      console.error('Delete error:', error)
+    }
   }
 
   const handleUpdate = async (payload) => {
@@ -137,11 +155,11 @@ export default function ItemTable({
                     <td className="px-6 py-4 text-sm text-center">
                       <div className="flex gap-2 justify-center">
                         <button
-                          className="p-2 text-amber-600 hover:bg-amber-100 rounded-full transition-colors"
+                          className="p-2 text-gray-600 hover:bg-amber-100 rounded-full transition-colors"
                           onClick={() => handleEdit(item)}
                           title="แก้ไข"
                         >
-                          <Pencil size={18} />
+                          <Settings size={18} />
                         </button>
                         <button
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
@@ -150,6 +168,23 @@ export default function ItemTable({
                         >
                           <ShoppingBasket size={20} />
                         </button>
+                        {!item.is_active ? (
+                          <button
+                            className="p-2 text-green-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
+                            onClick={() => handleRestoreItem(item.item_id)}
+                            title="กู้คืนพัสดุ"
+                          >
+                            <Undo2 size={20} />
+                          </button>
+                        ) : (
+                          <button
+                            className="p-2 text-red-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
+                            onClick={() => handleDeleteItem(item.item_id)}
+                            title="ลบพัสดุ"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

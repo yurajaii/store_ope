@@ -8,7 +8,7 @@ export default function CategoryCard({ icon, title, count, category, subcategory
       onClick={onClick}
       className="
         flex flex-col items-center justify-center
-        h-60 p-4
+        h-60 w-60 p-4
         rounded-lg
         bg-gray-200
         cursor-pointer

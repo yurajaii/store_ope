@@ -114,7 +114,7 @@ export default function CategoryPage() {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
             {selectedCategory && (
               <button
                 className="text-lg text-primary mb-4 cursor-pointer hover:text-2xl transition-all duration-200"

@@ -5,7 +5,7 @@ import { AlertTriangle } from 'lucide-react'
 const DeadstockChart = ({ data }) => {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-md w-full">
+      <div className="bg-white p-6 rounded-xl border-gray-300 border w-full">
         <h2 className="text-xl font-bold mb-4">พัสดุคงค้าง (Deadstock)</h2>
         <div className="text-center py-8 text-gray-400">ไม่มีพัสดุคงค้าง</div>
       </div>
@@ -80,11 +80,11 @@ const DeadstockChart = ({ data }) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full">
+    <div className="bg-white p-6 rounded-xl border-gray-300 border w-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-orange-500" />
-          พัสดุคงค้าง (Deadstock)
+          พัสดุค้างใช้งาน (Deadstock)
         </h2>
         <div className="flex gap-3 text-xs">
           <span className="flex items-center gap-1">

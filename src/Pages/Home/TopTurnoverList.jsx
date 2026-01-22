@@ -12,10 +12,10 @@ const TopTurnoverList = ({ data }) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full overflow-y-auto h-125 ">
+    <div className="bg-white py-6 pl-6 rounded-xl border-gray-300 border w-full overflow-y-auto h-125 ">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-primary" />
-        พัสดุที่มีการเบิกสูงสุด (Top Turnover)
+        พัสดุที่มีการเบิกสูงสุด
       </h2>
 
       <div className="space-y-3">
@@ -28,7 +28,7 @@ const TopTurnoverList = ({ data }) => {
             <div className="flex items-center gap-3 flex-1">
               <div
                 className={`
-                  w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                  w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm
                   ${
                     index === 0
                       ? 'bg-yellow-100 text-yellow-700'
@@ -44,13 +44,12 @@ const TopTurnoverList = ({ data }) => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-gray-400" />
-                <span className="font-medium text-gray-800">{item.name}</span>
+                <span className="font-medium text-sm text-gray-800">{item.name}</span>
               </div>
             </div>
 
             {/* ข้อมูลสถิติ */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-start gap-6">
               <div className="text-right">
                 <p className="text-xs text-gray-500">จำนวนเบิก</p>
                 <p className="text-lg font-bold text-primary">

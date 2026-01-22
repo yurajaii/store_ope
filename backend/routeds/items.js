@@ -3,44 +3,41 @@ import express from 'express'
 const router = express.Router()
 
 export default function ItemList(db) {
-router.get('/', async (req, res) => {
-  const page = parseInt(req.query.page) || 1
-  const limit = parseInt(req.query.limit) || 20
-  const offset = (page - 1) * limit
-  
+  router.get('/', async (req, res) => {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20
+    const offset = (page - 1) * limit
 
-  const searchQuery = req.query.search || ''
-  const categoryId = req.query.category_id || null
-  const mainCategory = req.query.main_category || null
+    const searchQuery = req.query.search || ''
+    const categoryId = req.query.category_id || null
+    const mainCategory = req.query.main_category || null
 
-  try {
-    let whereConditions = []
-    let queryParams = []
-    let paramIndex = 1
+    try {
+      let whereConditions = []
+      let queryParams = []
+      let paramIndex = 1
 
-    if (searchQuery) {
-      whereConditions.push(`(i.name ILIKE $${paramIndex} OR i.id::text LIKE $${paramIndex})`)
-      queryParams.push(`%${searchQuery}%`)
-      paramIndex++
-    }
+      if (searchQuery) {
+        whereConditions.push(`(i.name ILIKE $${paramIndex} OR i.id::text LIKE $${paramIndex})`)
+        queryParams.push(`%${searchQuery}%`)
+        paramIndex++
+      }
 
-    if (categoryId) {
-      whereConditions.push(`i.category_id = $${paramIndex}`)
-      queryParams.push(categoryId)
-      paramIndex++
-    }
+      if (categoryId) {
+        whereConditions.push(`i.category_id = $${paramIndex}`)
+        queryParams.push(categoryId)
+        paramIndex++
+      }
 
-    if (mainCategory) {
-      whereConditions.push(`c.category = $${paramIndex}`)
-      queryParams.push(mainCategory)
-      paramIndex++
-    }
+      if (mainCategory) {
+        whereConditions.push(`c.category = $${paramIndex}`)
+        queryParams.push(mainCategory)
+        paramIndex++
+      }
 
-    const whereClause = whereConditions.length > 0 
-      ? 'WHERE ' + whereConditions.join(' AND ') 
-      : ''
+      const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : ''
 
-    const dataQuery = `
+      const dataQuery = `
       SELECT inv.*, i.name, i.unit, i.is_active, i.min_threshold, i.max_threshold, 
              c.category, c.subcategory, i.category_id
       FROM inventories AS inv
@@ -50,40 +47,39 @@ router.get('/', async (req, res) => {
       ORDER BY inv.id DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
-    queryParams.push(limit, offset)
+      queryParams.push(limit, offset)
 
-    const dataResult = await db.query(dataQuery, queryParams)
-    const countQuery = `
+      const dataResult = await db.query(dataQuery, queryParams)
+      const countQuery = `
       SELECT COUNT(*) 
       FROM inventories AS inv
       LEFT JOIN items AS i ON inv.item_id = i.id
       LEFT JOIN categories AS c ON i.category_id = c.id
       ${whereClause}
     `
-    const countResult = await db.query(countQuery, queryParams.slice(0, -2))
-    
-    const totalItems = parseInt(countResult.rows[0].count)
-    const totalPages = Math.ceil(totalItems / limit)
+      const countResult = await db.query(countQuery, queryParams.slice(0, -2))
 
-    return res.json({
-      success: true,
-      items: dataResult.rows,
-      pagination: {
-        totalItems,
-        totalPages,
-        currentPage: page,
-        limit,
-      },
-    })
-  } catch (error) {
-    console.log('Get item error:', error)
-    return res.status(500).json({
-      success: false,
-      message: 'Database Error',
-    })
-  }
-})
+      const totalItems = parseInt(countResult.rows[0].count)
+      const totalPages = Math.ceil(totalItems / limit)
 
+      return res.json({
+        success: true,
+        items: dataResult.rows,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      })
+    } catch (error) {
+      console.log('Get item error:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Database Error',
+      })
+    }
+  })
 
   router.post('/', async (req, res) => {
     const { category_id, name, unit, min_threshold, max_threshold } = req.body
@@ -152,34 +148,76 @@ router.get('/', async (req, res) => {
   })
 
   router.patch('/:id/delete', async (req, res) => {
-    const id = req.params.id
+    const itemId = req.params.id
+    const userId = req.user?.id ?? 2
+
+    const client = await db.connect()
 
     try {
-      const result = await db.query(`SELECT COUNT(*) FROM items WHERE id = $1 AND is_active`, [id])
+      await client.query('BEGIN')
 
-      if (result.rows[0].count == 0) {
+      // 1. ล็อกตาราง items ก่อน
+      const itemRes = await client.query(
+        `SELECT id, is_active 
+         FROM items 
+         WHERE id = $1 AND is_active = true
+         FOR UPDATE`,
+        [itemId]
+      )
+
+      if (itemRes.rows.length === 0) {
+        await client.query('ROLLBACK')
         return res.status(404).json({
           success: false,
-          message: 'Category not found',
+          message: 'Item not found or already deleted',
         })
       }
 
-      await db.query(
-        `
-        UPDATE items
-        SET is_active = false
-        WHERE id = $1
-        `,
-        [id]
+      // 2. เช็คว่ามี Inventory ไหม และล็อกแถว
+      const invRes = await client.query(
+        `SELECT quantity FROM inventories WHERE item_id = $1 FOR UPDATE`,
+        [itemId]
       )
 
-      return res.json({ success: true, message: `Completely Delete item NO.${id}` })
+      const currentQty = invRes.rows.length > 0 ? invRes.rows[0].quantity : 0
+
+      // 3. ถ้ามีของค้าง ต้องเคลียร์ออก (Logic เดิม)
+      if (currentQty !== 0) {
+        const adjustmentVal = -currentQty
+        const newBalance = 0
+
+        // Insert Log
+        await client.query(
+          `
+          INSERT INTO inventory_logs 
+          (item_id, type, quantity, created_by, balance_after, remark)
+          VALUES ($1, 'ADJUST', $2, $3, $4, 'ระบบ: สต็อกถูกเคลียร์อัตโนมัติเนื่องจากมีการลบพัสดุออกจากระบบ')
+          `,
+          [itemId, adjustmentVal, userId, newBalance]
+        )
+
+        // --- แก้ตรงนี้: ลบ updated_at ออก ---
+        await client.query(`UPDATE inventories SET quantity = 0 WHERE item_id = $1`, [itemId])
+      }
+
+      // 4. Soft Delete ตัว Item
+      await client.query(`UPDATE items SET is_active = false WHERE id = $1`, [itemId])
+
+      await client.query('COMMIT')
+
+      return res.json({
+        success: true,
+        message: `Item NO.${itemId} deleted and inventory cleared via log.`,
+      })
     } catch (error) {
-      console.error('Create item error:', error)
+      await client.query('ROLLBACK')
+      console.error('Delete item error:', error)
       return res.status(500).json({
         success: false,
         message: 'Database Error',
       })
+    } finally {
+      client.release()
     }
   })
 

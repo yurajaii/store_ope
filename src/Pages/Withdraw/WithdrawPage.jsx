@@ -109,7 +109,7 @@ export default function WithdrawPage() {
       await fetchWithdrawList()
     } catch (error) {
       console.error('Approval failed:', error)
-      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message))
+      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.error || error.message))
     }
   }
 
@@ -119,7 +119,7 @@ export default function WithdrawPage() {
       item.approved_quantity
     )
 
-    if (returnQty === null) return // กดยกเลิก
+    if (returnQty === null) return 
 
     const qty = parseInt(returnQty)
     if (isNaN(qty) || qty <= 0 || qty > item.approved_quantity) {
@@ -132,7 +132,7 @@ export default function WithdrawPage() {
         item_id: item.item_id,
         type: 'RETURN',
         quantity: qty,
-        reference_id: `WITHDRAW-#${withdrawId}`, // อ้างอิงเลขใบเบิก
+        reference_id: `WITHDRAW-#${withdrawId}`, 
         remark: `คืนพัสดุจากใบเบิก #${withdrawId}`,
       }
 

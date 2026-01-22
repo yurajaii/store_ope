@@ -11,7 +11,7 @@ export default function SideBar() {
         <button onClick={() => setOpen(true)}>
           <Menu className="w-7 h-7 text-primary" />
         </button>
-        <h1 className="ml-4 text-primary text-xl font-semibold">OPE</h1>
+        <h1 className="ml-4 text-primary text-xl font-semibold">OPF Warehouse</h1>
       </div>
 
       {/* Overlay */}
@@ -38,7 +38,7 @@ export default function SideBar() {
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-5">
-          <h1 className="text-3xl">OPE</h1>
+          <h1 className="text-3xl">OPF Warehouse</h1>
           <button className="md:hidden" onClick={() => setOpen(false)}>
             <X />
           </button>
