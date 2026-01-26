@@ -15,7 +15,10 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.3",
     "nodemon": "^3.1.11",
+    "passport": "^0.7.0",
+    "passport-azure-ad": "^4.3.5",
     "pg": "^8.16.3"
   }
 }

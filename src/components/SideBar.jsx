@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { House, Package, Group, FileClock, Menu, X, Files } from 'lucide-react'
+import { House, Package, Group, FileClock, Menu, X, Files, Shield } from 'lucide-react'
+import { UserContext } from '../Context/UserContextInstance'
 
 export default function SideBar() {
   const [open, setOpen] = useState(false)
+  const { user } = useContext(UserContext)
+
   return (
     <>
       {/* Mobile Top Bar */}
@@ -71,6 +74,14 @@ export default function SideBar() {
             path="/logs"
             setOpen={setOpen}
           />
+          {user?.role === 'system_admin' && (
+            <MenuItem
+              icon={<Shield size={20} />}
+              label="จัดการผู้ใช้"
+              path="/admin"
+              setOpen={setOpen}
+            />
+          )}
         </div>
       </aside>
     </>

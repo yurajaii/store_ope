@@ -86,10 +86,10 @@ export default function HomePage() {
     fetchTopTurnoverItems(startDate, endDate, categoryId)
   }, [startDate, endDate, categoryId])
 
-  console.log('Current reportCard state:', reportCard)
-  console.log('Usage Trend', usageTrend)
-  console.log('Top Turnover', topTurnoverItems)
-  console.log('Dead Stock', deadstockItems)
+  // console.log('Current reportCard state:', reportCard)
+  // console.log('Usage Trend', usageTrend)
+  // console.log('Top Turnover', topTurnoverItems)
+  // console.log('Dead Stock', deadstockItems)
 
   return (
     <>
