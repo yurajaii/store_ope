@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react'
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
-import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import { useEffect, useContext } from 'react'
 import SideBar from './components/SideBar'
 import HomePage from './Pages/Home/HomePage'
@@ -10,6 +8,7 @@ import Package from './Pages/Item/ItemPage'
 import LogPage from './Pages/Log/LogPage'
 import WithdrawPage from './Pages/Withdraw/WithdrawPage'
 import WishlistPage from './Pages/Wishlist/WishlistPage'
+import { LoginPage } from './Pages/Login/LoginPage'
 import { AdminPage } from './Pages/Admin/AdminPage'
 import { FloatingCartButton } from './components/FAB'
 import { useFavorites } from './hooks/useFavorite'
@@ -19,7 +18,7 @@ export default function App() {
   const { instance, accounts } = useMsal()
   const isAuthenticated = useIsAuthenticated()
   const { favoriteCount, fetchFavorites } = useFavorites()
-  const { user, setUser, logout: contextLogout, setLoading } = useContext(UserContext)
+  const { user, setUser, setLoading } = useContext(UserContext)
 
   const API_URL = import.meta.env.VITE_API_URL
 
@@ -31,19 +30,6 @@ export default function App() {
       setUser(null)
     }
   }, [accounts, instance, isAuthenticated, setUser])
-
-  const handleLogin = () => {
-    instance.loginRedirect().catch((e) => console.error(e))
-  }
-
-  const handleLogout = () => {
-    contextLogout()
-    instance
-      .logoutRedirect({
-        postLogoutRedirectUri: window.location.origin,
-      })
-      .catch((e) => console.error(e))
-  }
 
   useEffect(() => {
     const fetchAllUserData = async () => {
@@ -91,7 +77,7 @@ export default function App() {
 
   // console.log('account',accounts[0])
   // console.log('instance',instance);
-  // console.log('User', user)
+  console.log('User', user)
   return (
     <BrowserRouter>
       <div className="w-full h-screen bg-gray-100 font-[prompt] flex">
@@ -100,10 +86,6 @@ export default function App() {
           <>
             <SideBar />
             <main className="flex-1 overflow-auto">
-              <p>สวัสดี {user?.jobTitle}</p>
-              <button onClick={handleLogout} className="m-4 p-2 bg-red-500 text-white rounded">
-                Logout
-              </button>
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/category" element={<CategoryPage />} />
@@ -120,20 +102,9 @@ export default function App() {
             </main>
           </>
         ) : (
-          /* ถ้ายังไม่ได้ล็อกอิน ให้โชว์หน้าต้อนรับที่มีปุ่ม Login */
-          <div className="flex flex-col items-center justify-center w-full">
-            <h1 className="text-2xl mb-4">กรุณาเข้าสู่ระบบ</h1>
-            <AuthenticatedTemplate>
-              <div>
-                <button onClick={handleLogout}>Sign out</button>
-              </div>
-            </AuthenticatedTemplate>
-            <UnauthenticatedTemplate>
-              <div>
-                <button onClick={handleLogin}>Sign in</button>
-              </div>
-            </UnauthenticatedTemplate>
-          </div>
+          <Routes>
+            <Route path="*" element={<LoginPage />} />
+          </Routes>
         )}
       </div>
     </BrowserRouter>
