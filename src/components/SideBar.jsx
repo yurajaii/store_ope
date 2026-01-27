@@ -18,6 +18,8 @@ import { useMsal } from '@azure/msal-react'
 export default function SideBar() {
   const [open, setOpen] = useState(false)
   const { user, logout: contextLogout } = useContext(UserContext)
+  // console.log('User',user);
+  
 
   const { instance } = useMsal()
   const handleLogout = () => {
@@ -90,9 +92,9 @@ export default function SideBar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white/60 font-medium">สวัสดี</p>
-              <p className="text-white font-semibold truncate">{user?.jobTitle || 'ผู้ใช้งาน'}</p>
+              <p className="text-white font-semibold truncate">{user?.job_title || 'ผู้ใช้งาน'}</p>
               <p className="text-sm text-white/60 font-medium  truncate">
-                {user?.officeLocation.split(' ', 1) || 'ไม่ทราบหน่วยงาน'}
+                {user?.office_location || 'ไม่ทราบหน่วยงาน'}
               </p>
             </div>
           </div>

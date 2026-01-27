@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { useEffect, useContext } from 'react'
 import SideBar from './components/SideBar'
@@ -13,7 +13,6 @@ import { AdminPage } from './Pages/Admin/AdminPage'
 import { FloatingCartButton } from './components/FAB'
 import { useFavorites } from './hooks/useFavorite'
 import { UserContext } from './Context/UserContextInstance'
-
 export default function App() {
   const { instance, accounts } = useMsal()
   const isAuthenticated = useIsAuthenticated()
@@ -22,67 +21,62 @@ export default function App() {
 
   const API_URL = import.meta.env.VITE_API_URL
 
+  // 1. จัดการ Account Active
   useEffect(() => {
     if (accounts.length > 0 && !instance.getActiveAccount()) {
       instance.setActiveAccount(accounts[0])
     }
-    if (!isAuthenticated) {
-      setUser(null)
-    }
-  }, [accounts, instance, isAuthenticated, setUser])
+  }, [accounts, instance])
 
+  // 2. ดึงข้อมูลจาก Backend ครั้งเดียว
   useEffect(() => {
-    const fetchAllUserData = async () => {
-      if (isAuthenticated && accounts.length > 0) {
+    const fetchUserData = async () => {
+      // ต้องมั่นใจว่า Login แล้ว และยังไม่มีข้อมูล user ใน Context
+      if (isAuthenticated && accounts.length > 0 && !user) {
         setLoading(true)
         try {
           const response = await instance.acquireTokenSilent({
             scopes: ['User.Read'],
             account: accounts[0],
           })
-          const token = response.accessToken
 
-          // ยิงคู่ขนานเพื่อความเร็ว (Optional)
-          const [graphRes, backendRes] = await Promise.all([
-            fetch('https://graph.microsoft.com/v1.0/me', {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch(`${API_URL}/auth`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-          ])
+          // ยิงไปที่ Backend /auth/me สร้าง/อัพเดทตาราง users สำหรับจัดการสิทธิ์
+          const backendRes = await fetch(`${API_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${response.accessToken}` },
+          })
 
-          const graphData = await graphRes.json()
-          const backendData = await backendRes.json()
+          const data = await backendRes.json()
 
-          // ✅ รวมร่างข้อมูลให้เป็นก้อนเดียว
-          const fullUser = {
-            ...graphData, // ข้อมูลจาก Microsoft
-            role: backendData.items, // ใช้ค่า system_admin จาก backend เก็บในชื่อ role ให้เรียกง่าย
-            dbId: backendData.id, // เก็บ id จาก DB แยกไว้
+          if (data.success) {
+            setUser(data.user)
           }
-
-          setUser(fullUser)
-          // console.log('✅ Combined User:', fullUser)
         } catch (e) {
-          console.error('❌ Sync Error:', e)
+          console.error('❌ Backend Sync Error:', e)
         } finally {
           setLoading(false)
         }
       }
     }
 
-    fetchAllUserData()
-  }, [isAuthenticated, accounts, instance, setUser, setLoading, API_URL])
+    fetchUserData()
+  }, [isAuthenticated, accounts, instance, API_URL, user])
 
-  // console.log('account',accounts[0])
-  // console.log('instance',instance);
-  console.log('User', user)
+  // 3. หน้า Loading ระหว่างรอ Backend ตอบกลับ (สำคัญมาก!)
+  if (isAuthenticated && !user) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center font-[prompt]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">กำลังเตรียมข้อมูลระบบ...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       <div className="w-full h-screen bg-gray-100 font-[prompt] flex">
-        {/* ถ้าล็อกอินแล้วค่อยโชว์ SideBar และเนื้อหา */}
-        {isAuthenticated ? (
+        {isAuthenticated && user ? (
           <>
             <SideBar />
             <main className="flex-1 overflow-auto">
@@ -95,8 +89,9 @@ export default function App() {
                 <Route path="/wishlist" element={<WishlistPage onUpdate={fetchFavorites} />} />
                 <Route
                   path="/admin"
-                  element={user?.role === 'system_admin' ? <AdminPage /> : <HomePage />}
+                  element={user.role === 'system_admin' ? <AdminPage /> : <Navigate to="/" />}
                 />
+                <Route path="*" element={<Navigate to="/" />} />
               </Routes>
               <FloatingCartButton count={favoriteCount} />
             </main>
