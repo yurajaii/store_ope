@@ -33,12 +33,11 @@ export function AdminPage() {
         ? response.data
         : response.data.users || response.data.data || []
 
-      // console.log('Fetched users:', userData)
       setUsers(userData)
     } catch (error) {
       console.error('Failed to fetch users:', error)
       setError('ไม่สามารถโหลดข้อมูลผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง')
-      setUsers([]) // ตั้งค่าเป็น array เปล่าเมื่อ error
+      setUsers([])
     } finally {
       setFetchLoading(false)
     }
@@ -48,25 +47,31 @@ export function AdminPage() {
     fetchUsers()
   }, [])
 
-  const handleRoleChange = async (userId, newRole) => {
-    setLoading(true)
-    try {
-      // API call to update role
-      await axios.put(`/users/${userId}/auth`, { role: newRole }) //
+  
+const handleRoleChange = async (userId, newRole) => {
+  if (loading) return;
 
-      // Update local state
-      setUsers(users.map((user) => (user.id === userId ? { ...user, role: newRole } : user)))
+  setLoading(true);
+  try {
+    const response = await axios.patch(`${API_URL}/auth/${userId}/role`, { 
+      role: newRole 
+    });
 
-      // Optional: Show success toast/notification
-      console.log(`Updated user ${userId} to role ${newRole}`)
-    } catch (error) {
-      console.error('Failed to update role:', error)
-      // Optional: Show error toast/notification
-      alert('ไม่สามารถเปลี่ยนสิทธิ์ได้ กรุณาลองใหม่อีกครั้ง')
-    } finally {
-      setLoading(false)
+    if (response.data.success) {
+      setUsers(prevUsers => 
+        prevUsers.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+      
+      console.log(`✅ เปลี่ยนสิทธิ์ของ ${userId} เป็น ${newRole} สำเร็จ`);
     }
+  } catch (error) {
+    console.error('❌ Failed to update role:', error);
+    alert('ไม่สามารถเปลี่ยนสิทธิ์ได้: ' + (error.response?.data?.message || 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์'));
+  } finally {
+    setLoading(false);
   }
+};
+
   const filteredUsers = Array.isArray(users)
     ? users.filter((user) => {
         const matchesSearch =
@@ -145,7 +150,7 @@ export function AdminPage() {
   return (
     <div className="w-full min-h-screen bg-gray-50 pb-10">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-secondary text-white px-6 md:px-10 py-8">
+      <div className="bg-linear-to-r from-primary to-secondary text-white px-6 md:px-10 py-8">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

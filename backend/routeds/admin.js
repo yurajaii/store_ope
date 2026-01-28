@@ -67,6 +67,40 @@ export default function AdminRoute(db) {
       res.status(500).send('Server Error')
     }
   })
+  // ในไฟล์ routes ของคุณ (เช่น auth.js หรือ users.js)
+  router.patch('/:id/role', async (req, res) => {
+    const { id } = req.params 
+    const { role } = req.body 
+
+    // ตรวจสอบเบื้องต้น (ตัวอย่าง role ที่เรามี 3 role)
+    const validRoles = ['system_admin', 'user_admin', 'user']
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' })
+    }
+
+    try {
+      const query = `
+      UPDATE users 
+      SET role = $1, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $2 
+      RETURNING *;
+    `
+      const result = await db.query(query, [role, id])
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ success: false, message: 'User not found' })
+      }
+
+      return res.json({
+        success: true,
+        message: 'Role updated successfully',
+        user: result.rows[0],
+      })
+    } catch (error) {
+      console.error('Update Role Error:', error)
+      return res.status(500).json({ success: false, message: 'Server Error' })
+    }
+  })
 
   return router
 }
