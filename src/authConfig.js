@@ -12,5 +12,5 @@ export const msalConfig = {
 
 // สิทธิ์ที่ขอเรียกใช้ (Scopes)
 export const loginRequest = {
-  scopes: ['User.Read'],
+  scopes: ['User.Read','api://f759d6b0-6c0b-4316-ad63-84ba6492af49/access_as_user'],
 }

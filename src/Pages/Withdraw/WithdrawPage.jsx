@@ -163,7 +163,7 @@ export default function WithdrawPage() {
 
   return (
     <>
-      <div className="categorypage w-full h-full mt-10">
+      <div className="categorypage w-full  mt-10">
         {/* Header */}
         <div className="header flex justify-between px-10 py-8">
           <div className="flex flex-col gap-2">

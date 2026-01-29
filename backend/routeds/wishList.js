@@ -1,11 +1,16 @@
 import express from 'express'
+import { requireAuth } from '../middleware/auth.js'
 
 const router = express.Router()
 
 export default function WishList(db) {
-  router.get('/', async (req, res) => {
-    const userId = req.user_id || 2
+  router.get('/', requireAuth, async (req, res) => {
+    console.log('User object from Passport:', req.user)
+    const userId = req.user?.oid
 
+    if (!userId) {
+      return res.status(401).json({ message: 'User identity not found in token' })
+    }
     const result = await db.query(
       `
       SELECT 

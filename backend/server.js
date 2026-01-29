@@ -7,23 +7,21 @@ import InventoryList from './routeds/inventories.js'
 import Withdraw from './routeds/withdraw.js'
 import WishList from './routeds/wishList.js'
 import Reported from './routeds/reports.js'
-import  Admin  from './routeds/admin.js'
+import Admin from './routeds/admin.js'
 import passport from 'passport'
 import { bearerStrategy } from './config/azureAuth.js'
 
 const port = 3000
 const app = express()
 const db = getDb()
-
-app.use(express.json())
-passport.use(bearerStrategy)
-app.use(passport.initialize())
-
 app.use(
   cors({
     origin: '*',
   })
 )
+app.use(express.json())
+passport.use(bearerStrategy)
+app.use(passport.initialize())
 
 app.get('/', (req, res) => {
   res.json('OPE invenotory management')

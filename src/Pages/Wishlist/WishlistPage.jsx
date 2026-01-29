@@ -9,11 +9,14 @@ import {
 } from '@/components/ui/dialog'
 import { Trash2 } from 'lucide-react'
 
+import { useMsal } from '@azure/msal-react'
+
 export default function WishlistPage({ onUpdate }) {
   const API_URL = import.meta.env.VITE_API_URL
   const [wishlist, setWishlist] = useState([])
   const [selectedItems, setSelectedItems] = useState({})
   const [dialogOpen, setDialogOpen] = useState(false)
+  const { instance, accounts } = useMsal()
 
   // Form data สำหรับ topic
   const [formData, setFormData] = useState({
@@ -26,7 +29,16 @@ export default function WishlistPage({ onUpdate }) {
 
   const fetchWishlist = async () => {
     try {
-      const res = await axios.get(`${API_URL}/wishlist`)
+      const tokenResponse = await instance.acquireTokenSilent({
+        scopes: ['api://f759d6b0-6c0b-4316-ad63-84ba6492af49/access_as_user'],
+        account: accounts[0],
+      })
+      const token = tokenResponse.accessToken
+      const res = await axios.get(`${API_URL}/wishlist`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       setWishlist(res.data)
     } catch (err) {
       console.error(err)
@@ -195,7 +207,10 @@ export default function WishlistPage({ onUpdate }) {
               <div className="text-center py-12 text-gray-500">ยังไม่มีพัสดุในตระกร้า</div>
             )}
             {wishlist.map((w) => (
-              <div key={w.item_id} className="flex items-center justify-between gap-3 p-2 pl-8 border-b hover:bg-blue-100">
+              <div
+                key={w.item_id}
+                className="flex items-center justify-between gap-3 p-2 pl-8 border-b hover:bg-blue-100"
+              >
                 <input
                   type="checkbox"
                   checked={selectedItems[w.item_id] || false}
@@ -222,7 +237,7 @@ export default function WishlistPage({ onUpdate }) {
                 </div>
                 <div
                   className="p-2 text-red-400 cursor-pointer  hover:bg-red-100 rounded-full transition-colors disabled:opacity-30"
-                  xxxxx
+        
                   onClick={() => handleDelete(w.item_id)}
                 >
                   <Trash2 size={20} />

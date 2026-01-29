@@ -31,35 +31,56 @@ export default function App() {
   // 2. ดึงข้อมูลจาก Backend ครั้งเดียว
   useEffect(() => {
     const fetchUserData = async () => {
-      // ต้องมั่นใจว่า Login แล้ว และยังไม่มีข้อมูล user ใน Context
       if (isAuthenticated && accounts.length > 0 && !user) {
         setLoading(true)
         try {
-          const response = await instance.acquireTokenSilent({
+          // 1. ขอ Token สำหรับ Microsoft Graph (เพื่อเอา displayName, mail)
+          const graphTokenRes = await instance.acquireTokenSilent({
             scopes: ['User.Read'],
             account: accounts[0],
           })
 
-          // ยิงไปที่ Backend /auth/me สร้าง/อัพเดทตาราง users สำหรับจัดการสิทธิ์
+          const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+            headers: { Authorization: `Bearer ${graphTokenRes.accessToken}` },
+          })
+          const { displayName, mail, jobTitle, officeLocation } = await graphRes.json()
+
+          // 2. ขอ Token สำหรับ Backend ของคุณ (เพื่อให้ aud ตรงกับ api://f759d6b0...)
+          const backendTokenRes = await instance.acquireTokenSilent({
+            scopes: ['api://f759d6b0-6c0b-4316-ad63-84ba6492af49/access_as_user'],
+            account: accounts[0],
+          })
+          console.log(backendTokenRes)
+          // 3. ส่งข้อมูลไปที่ Backend
           const backendRes = await fetch(`${API_URL}/auth/me`, {
-            headers: { Authorization: `Bearer ${response.accessToken}` },
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${backendTokenRes.accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ displayName, mail, jobTitle, officeLocation }),
           })
 
           const data = await backendRes.json()
-
           if (data.success) {
             setUser(data.user)
           }
+          // ใน App.jsx ส่วน catch ของ fetchUserData
         } catch (e) {
+          if (e.name === 'InteractionRequiredAuthError') {
+            // ใช้ Redirect แทน Popup เพื่อเลี่ยงปัญหาโดน Browser บล็อค
+            instance.acquireTokenRedirect({
+              scopes: ['api://f759d6b0-6c0b-4316-ad63-84ba6492af49/access_as_user'],
+            })
+          }
           console.error('❌ Backend Sync Error:', e)
         } finally {
           setLoading(false)
         }
       }
     }
-
     fetchUserData()
-  }, [isAuthenticated, accounts, instance, API_URL, user])
+  }, [isAuthenticated, accounts, instance, API_URL, user, setLoading, setUser])
 
   // 3. หน้า Loading ระหว่างรอ Backend ตอบกลับ (สำคัญมาก!)
   if (isAuthenticated && !user) {

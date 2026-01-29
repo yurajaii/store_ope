@@ -19,7 +19,6 @@ export default function SideBar() {
   const [open, setOpen] = useState(false)
   const { user, logout: contextLogout } = useContext(UserContext)
   // console.log('User',user);
-  
 
   const { instance } = useMsal()
   const handleLogout = () => {
@@ -133,14 +132,15 @@ export default function SideBar() {
 
           {/* Bottom Menu */}
           <div className="px-3 pb-4 space-y-1 pt-4">
-            {user?.role === 'system_admin' && (
-              <MenuItem
-                icon={<Shield size={20} />}
-                label="จัดการผู้ใช้"
-                path="/admin"
-                setOpen={setOpen}
-              />
-            )}
+            {user?.role === 'system_admin' ||
+              (user?.role === 'user_admin' && (
+                <MenuItem
+                  icon={<Shield size={20} />}
+                  label="จัดการผู้ใช้"
+                  path="/admin"
+                  setOpen={setOpen}
+                />
+              ))}
             <MenuItem
               icon={<LogOut size={20} />}
               label="ออกจากระบบ"

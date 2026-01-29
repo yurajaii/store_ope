@@ -1,7 +1,8 @@
 import axios from 'axios'
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { ShoppingBasket, Settings, Trash2, Undo2 } from 'lucide-react'
 import ItemDialog from './ItemDialog'
+import { UserContext } from '@/Context/UserContextInstance'
 
 export default function ItemTable({
   data = [],
@@ -15,6 +16,7 @@ export default function ItemTable({
   const [quantities, setQuantities] = useState({})
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
+  const { user } = useContext(UserContext)
 
   if (data.length === 0) {
     return (
@@ -29,7 +31,7 @@ export default function ItemTable({
       await axios.post(`${API_URL}/wishlist`, {
         item_id: itemId,
         quantity: qty,
-        user_id: 2,
+        user_id: user.id,
       })
       setQuantities((prev) => ({ ...prev, [itemId]: 1 }))
       await onUpdate()
@@ -154,13 +156,15 @@ export default function ItemTable({
                     </td>
                     <td className="px-6 py-4 text-sm text-center">
                       <div className="flex gap-2 justify-center">
-                        <button
-                          className="p-2 text-gray-600 hover:bg-amber-100 rounded-full transition-colors"
-                          onClick={() => handleEdit(item)}
-                          title="แก้ไข"
-                        >
-                          <Settings size={18} />
-                        </button>
+                        {(user?.role === 'system_admin' || user?.role === 'user_admin') && (
+                          <button
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                            onClick={() => handleEdit(item)}
+                            title="แก้ไข"
+                          >
+                            <Settings size={18} />
+                          </button>
+                        )}
                         <button
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
                           onClick={() => handleAdd(item.item_id, quantities[item.item_id] ?? 1)}
@@ -168,23 +172,24 @@ export default function ItemTable({
                         >
                           <ShoppingBasket size={20} />
                         </button>
-                        {!item.is_active ? (
-                          <button
-                            className="p-2 text-green-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
-                            onClick={() => handleRestoreItem(item.item_id)}
-                            title="กู้คืนพัสดุ"
-                          >
-                            <Undo2 size={20} />
-                          </button>
-                        ) : (
-                          <button
-                            className="p-2 text-red-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
-                            onClick={() => handleDeleteItem(item.item_id)}
-                            title="ลบพัสดุ"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        )}
+                        {(user?.role === 'system_admin' || user?.role === 'user_admin') &&
+                          (!item.is_active ? (
+                            <button
+                              className="p-2 text-green-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
+                              onClick={() => handleRestoreItem(item.item_id)}
+                              title="กู้คืนพัสดุ"
+                            >
+                              <Undo2 size={20} />
+                            </button>
+                          ) : (
+                            <button
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors disabled:opacity-30"
+                              onClick={() => handleDeleteItem(item.item_id)}
+                              title="ลบพัสดุ"
+                            >
+                              <Trash2 size={20} />
+                            </button>
+                          ))}
                       </div>
                     </td>
                   </tr>
@@ -192,21 +197,21 @@ export default function ItemTable({
             </tbody>
           </table>
           {/* Pagination UI */}
-          <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-t">
+          <div className="flex  justify-between items-center px-6 py-4 bg-gray-50 border-t">
             <p className="text-sm text-gray-600">
               หน้า <span className="font-semibold text-indigo-600">{page}</span> จาก {totalPages}
             </p>
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
-                onClick={() => onPageChange(page - 1)} // แจ้งตัวแม่ว่าขอลดหน้า
+                onClick={() => onPageChange(page - 1)}
                 className="px-4 py-2 text-sm border rounded shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 ก่อนหน้า
               </button>
               <button
                 disabled={page >= totalPages}
-                onClick={() => onPageChange(page + 1)} // แจ้งตัวแม่ว่าขอเพิ่มหน้า
+                onClick={() => onPageChange(page + 1)}
                 className="px-4 py-2 text-sm border rounded shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 ถัดไป

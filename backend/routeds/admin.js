@@ -1,6 +1,5 @@
 import express from 'express'
-import jwt from 'jsonwebtoken'
-import axios from 'axios'
+import passport from 'passport'
 
 const router = express.Router()
 
@@ -19,58 +18,63 @@ export default function AdminRoute(db) {
     }
   })
 
-  router.get('/me', async (req, res) => {
-    try {
-      const authHeader = req.headers['authorization']
-      const token = authHeader?.split(' ')[1]
-      if (!token) return res.status(401).json({ message: 'No token' })
+  router.post(
+    '/me',
+    passport.authenticate('oauth-bearer', { session: false }),
+    async (req, res) => {
+      try {
+        // ข้อมูลจาก Token ที่ passport ตรวจสอบให้แล้วจะอยู่ใน req.user
+        const azureId = req.user.oid
 
-      const decoded = jwt.decode(token)
-      const azureId = decoded.oid
+        // ข้อมูลโปรไฟล์ที่ React ส่งมาให้ใน Body
+        const { displayName, mail, jobTitle, officeLocation } = req.body
 
-      // 1. ลองหา User ใน DB ก่อน
-      let userResult = await db.query('SELECT * FROM users WHERE id = $1', [azureId])
-      let userData = userResult.rows[0]
+        // 1. ลองหา User ใน DB
+        let userResult = await db.query('SELECT * FROM users WHERE id = $1', [azureId])
+        let userData = userResult.rows[0]
 
-      // 2. ถ้าไม่เจอ (เป็น User ใหม่) ให้ยิงไปเอาข้อมูลจาก Azure แล้วบันทึก
-      if (!userData) {
-        console.log('New User detected! Fetching from Azure...')
+        // 2. ถ้าไม่เจอ (User ใหม่) หรือต้องการอัปเดตข้อมูลให้เป็นปัจจุบัน
+        if (!userData) {
+          console.log('New User detected! Saving to database...')
 
-        const graphRes = await axios.get('https://graph.microsoft.com/v1.0/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
-        const { displayName, mail, jobTitle, officeLocation } = graphRes.data
-
-        // บันทึกลง DB (สมมติ Role เริ่มต้นเป็น 'user')
-        const insertResult = await db.query(
-          'INSERT INTO users (id, display_name, email, role, job_title, office_location) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-          [
-            azureId,
+          const insertResult = await db.query(
+            `INSERT INTO users (id, display_name, email, role, job_title, office_location) 
+         VALUES ($1, $2, $3, $4, $5, $6) 
+         RETURNING *`,
+            [
+              azureId,
+              displayName,
+              mail || req.user.preferred_username, // ใช้จาก body หรือถ้าไม่มีใช้จาก token
+              'user', // Role เริ่มต้น
+              jobTitle,
+              officeLocation,
+            ]
+          )
+          userData = insertResult.rows[0]
+        } else {
+          // (Optional) อัปเดตข้อมูลเผื่อมีการเปลี่ยนชื่อหรือตำแหน่งใน Azure
+          await db.query('UPDATE users SET display_name = $1, job_title = $2 WHERE id = $3', [
             displayName,
-            mail || decoded.preferred_username,
-            'user',
             jobTitle,
-            officeLocation,
-          ]
-        )
-        userData = insertResult.rows[0]
-      }
+            azureId,
+          ])
+        }
 
-      // 3. ตอบกลับด้วยข้อมูลจาก DB (ซึ่งตอนนี้มีชัวร์ๆ แล้ว)
-      return res.json({
-        success: true,
-        user: userData,
-      })
-    } catch (error) {
-      console.error('Flow error:', error)
-      res.status(500).send('Server Error')
+        // 3. ตอบกลับด้วยข้อมูลจาก DB
+        return res.json({
+          success: true,
+          user: userData,
+        })
+      } catch (error) {
+        console.error('❌ Backend Sync Error:', error)
+        res.status(500).json({ success: false, message: 'Server Error' })
+      }
     }
-  })
+  )
   // ในไฟล์ routes ของคุณ (เช่น auth.js หรือ users.js)
   router.patch('/:id/role', async (req, res) => {
-    const { id } = req.params 
-    const { role } = req.body 
+    const { id } = req.params
+    const { role } = req.body
 
     // ตรวจสอบเบื้องต้น (ตัวอย่าง role ที่เรามี 3 role)
     const validRoles = ['system_admin', 'user_admin', 'user']

@@ -4,7 +4,8 @@ import CategoryCard from './CategoryCard'
 import CategoryDialog from './CategoryDialog'
 
 import { CircleX } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
+import { UserContext } from '@/Context/UserContextInstance'
 const API_URL = import.meta.env.VITE_API_URL
 
 export default function CategoryPage() {
@@ -14,6 +15,7 @@ export default function CategoryPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editData, setEditData] = useState(null)
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const { user } = useContext(UserContext)
 
   const groupedCategories = categories.reduce((acc, cur) => {
     const key = cur.category
@@ -66,22 +68,24 @@ export default function CategoryPage() {
             <p className="text-3xl font-bold">หมวดหมู่พัสดุ</p>
             <p className="text-gray-400">จัดการหมวดหมู่พัสดุของคุณ</p>
           </div>
-
-          <button
-            className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
-            onClick={() => {
-              setEditData(
-                selectedCategory
-                  ? {
-                      category: selectedCategory,
-                    }
-                  : null
-              )
-              setDialogOpen(true)
-            }}
-          >
-            + เพิ่มหมวดใหม่
-          </button>
+          {user?.role === 'system_admin' ||
+            (user?.role === 'user_admin' && (
+              <button
+                className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
+                onClick={() => {
+                  setEditData(
+                    selectedCategory
+                      ? {
+                          category: selectedCategory,
+                        }
+                      : null
+                  )
+                  setDialogOpen(true)
+                }}
+              >
+                + เพิ่มหมวดใหม่
+              </button>
+            ))}
         </div>
 
         {/* Content */}
@@ -159,13 +163,15 @@ export default function CategoryPage() {
                   category={c.category}
                   subcategory={c.subcategory}
                   onClick={() => {
-                    setEditData({
-                      id: c.id,
-                      category: c.category,
-                      subcategory: c.subcategory,
-                      icon: c.icon,
-                    })
-                    setDialogOpen(true)
+                    if (user?.role === 'system_admin' || user?.role === 'user_admin') {
+                      setEditData({
+                        id: c.id,
+                        category: c.category,
+                        subcategory: c.subcategory,
+                        icon: c.icon,
+                      })
+                      setDialogOpen(true)
+                    }
                   }}
                 />
               ))}
