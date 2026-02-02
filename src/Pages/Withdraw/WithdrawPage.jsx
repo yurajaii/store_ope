@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/Utils/api'
 import { Ellipsis } from 'lucide-react'
 import toThaiTime from '@/Utils/toThaiTime'
 import {
@@ -29,7 +29,7 @@ export default function WithdrawPage() {
 
   const fetchWithdrawList = async () => {
     try {
-      const res = await axios.get(`${API_URL}/withdraw?page=${page}&limit=${limit}`)
+      const res = await api.get(`${API_URL}/withdraw?page=${page}&limit=${limit}`)
       setWithdrawList(res.data.withdrawn)
       setTotalPages(res.data.pagination.totalPages)
     } catch (err) {
@@ -40,7 +40,7 @@ export default function WithdrawPage() {
   const fetchWithdrawDetail = async (withdrawId) => {
     setLoading(true)
     try {
-      const res = await axios.get(`${API_URL}/withdraw/${withdrawId}`)
+      const res = await api.get(`${API_URL}/withdraw/${withdrawId}`)
       setSelectedWithdraw(res.data.withdraw)
 
       const initialApproval = {}
@@ -99,7 +99,7 @@ export default function WithdrawPage() {
         reject_reason: approvalData[item.withdraw_item_id]?.reject_reason || null,
       }))
 
-      await axios.post(`${API_URL}/withdraw/${selectedWithdraw.id}/approve`, {
+      await api.post(`${API_URL}/withdraw/${selectedWithdraw.id}/approve`, {
         items,
         note: approveNote,
       })
@@ -136,7 +136,7 @@ export default function WithdrawPage() {
         remark: `คืนพัสดุจากใบเบิก #${withdrawId}`,
       }
 
-      await axios.post(`${API_URL}/inventory/log`, payload)
+      await api.post(`${API_URL}/inventory/log`, payload)
       alert('บันทึกการคืนของสำเร็จ!')
 
       // Refresh ข้อมูล

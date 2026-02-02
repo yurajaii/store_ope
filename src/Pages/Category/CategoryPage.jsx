@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import axios from 'axios'
+import api from '@/Utils/api'
 import CategoryCard from './CategoryCard'
 import CategoryDialog from './CategoryDialog'
 
@@ -40,7 +40,7 @@ export default function CategoryPage() {
 
   const fetchCategory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/category`)
+      const res = await api.get(`${API_URL}/category`)
       setCategories(res.data.categories)
     } catch (error) {
       console.error(error)
@@ -185,9 +185,9 @@ export default function CategoryPage() {
         defaultData={editData}
         onSubmit={async (data) => {
           if (editData?.id) {
-            await axios.put(`${API_URL}/category/${data.id}`, data)
+            await api.put(`${API_URL}/category/${data.id}`, data)
           } else {
-            await axios.post(`${API_URL}/category`, data)
+            await api.post(`${API_URL}/category`, data)
           }
           setDialogOpen(false)
           fetchCategory()

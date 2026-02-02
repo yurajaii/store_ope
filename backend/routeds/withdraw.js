@@ -37,7 +37,8 @@ export default function Withdraw(db) {
   })
 
   router.post('/', async (req, res) => {
-    const { items, requestedBy, topic } = req.body
+    const { items,  topic } = req.body
+    const requestedBy = req.user?.id ?? 2
 
     if (!requestedBy) {
       return res.status(401).json({ success: false, message: 'Unauthorized' })

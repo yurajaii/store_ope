@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '@/Utils/api'
 import toThaiTime from '@/Utils/toThaiTime'
 
 export default function LogPage() {
@@ -22,7 +22,7 @@ export default function LogPage() {
   async function fetchLogs() {
     setLoading(true)
     try {
-      const result = await axios.get(`${API_URL}/inventory/log`, {
+      const result = await api.get(`${API_URL}/inventory/log`, {
         params: {
           start_date: startDate,
           end_date: endDate,
@@ -44,7 +44,7 @@ export default function LogPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchCategory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/category`)
+      const res = await api.get(`${API_URL}/category`)
       setCategories(res.data.categories)
     } catch (error) {
       console.error(error)

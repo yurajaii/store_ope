@@ -1,9 +1,9 @@
-import axios from 'axios'
 import { useState, useEffect } from 'react'
 import Card from './Card'
 import UsageTrendChart from './UsageTrendChart'
 import TopTurnoverList from './TopTurnoverList'
 import DeadstockChart from './DeadstockChart'
+import api from '@/Utils/api'
 const API_URL = import.meta.env.VITE_API_URL
 export default function HomePage() {
   const [reportCard, setReportCard] = useState([])
@@ -24,7 +24,7 @@ export default function HomePage() {
 
   const fetchCategory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/category`)
+      const res = await api.get(`${API_URL}/category`)
       setCategories(res.data.categories)
     } catch (error) {
       console.error(error)
@@ -32,7 +32,7 @@ export default function HomePage() {
   }
   const fetchReportCard = async () => {
     try {
-      const res = await axios.get(`${API_URL}/reports/card`)
+      const res = await api.get(`${API_URL}/reports/card`)
       setReportCard(res.data.result)
     } catch (error) {
       console.error('Error fetching report card:', error)
@@ -45,7 +45,7 @@ export default function HomePage() {
       if (startDate) params.append('startDate', startDate)
       if (endDate) params.append('endDate', endDate)
       if (category_id) params.append('category_id', category_id)
-      const res = await axios.get(`${API_URL}/reports/usage-trend?${params.toString()}`)
+      const res = await api.get(`${API_URL}/reports/usage-trend?${params.toString()}`)
       setUsageTrend(res.data.result)
     } catch (error) {
       console.error('Error fetching usage trend:', error)
@@ -58,7 +58,7 @@ export default function HomePage() {
       if (startDate) params.append('startDate', startDate)
       if (endDate) params.append('endDate', endDate)
       if (category_id) params.append('category_id', category_id)
-      const res = await axios.get(`${API_URL}/reports/top-turnover?${params.toString()}`)
+      const res = await api.get(`${API_URL}/reports/top-turnover?${params.toString()}`)
       setTopTurnoverItems(res.data.result)
     } catch (error) {
       console.error('Error fetching usage trend:', error)
@@ -66,7 +66,7 @@ export default function HomePage() {
   }
   const fetchDeadStockItems = async (days = 30) => {
     try {
-      const res = await axios.get(`${API_URL}/reports/deadstock?days=${days}`)
+      const res = await api.get(`${API_URL}/reports/deadstock?days=${days}`)
       setDeadstockItems(res.data.result)
     } catch (error) {
       console.error('Fetch deadstock error:', error)

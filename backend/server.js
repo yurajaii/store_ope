@@ -22,6 +22,7 @@ app.use(
 app.use(express.json())
 passport.use(bearerStrategy)
 app.use(passport.initialize())
+const authMiddleware = passport.authenticate('oauth-bearer', { session: false })
 
 app.get('/', (req, res) => {
   res.json('OPE invenotory management')
@@ -31,10 +32,10 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}`)
 })
 
-app.use('/category', Category(db))
-app.use('/items', ItemList(db))
-app.use('/inventory', InventoryList(db))
-app.use('/withdraw', Withdraw(db))
-app.use('/wishlist', WishList(db))
-app.use('/reports', Reported(db))
-app.use('/auth', Admin(db))
+app.use('/category', authMiddleware, Category(db))
+app.use('/items', authMiddleware, ItemList(db))
+app.use('/inventory', authMiddleware, InventoryList(db))
+app.use('/withdraw', authMiddleware, Withdraw(db))
+app.use('/wishlist', authMiddleware, WishList(db))
+app.use('/reports', authMiddleware, Reported(db))
+app.use('/auth', authMiddleware, Admin(db))

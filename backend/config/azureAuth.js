@@ -13,7 +13,10 @@ const options = {
 
 
 export const bearerStrategy = new BearerStrategy(options, (token, done) => {
-  // Token ที่ verified แล้วจะอยู่ในตัวแปร token
-  // token.oid = Azure Object ID ของ user
-  return done(null, token, token)
-})
+  // สร้าง object user ขึ้นมาใหม่และยัด oid ใส่ไปในชื่อ id
+  const user = {
+    ...token,
+    id: token.oid 
+  };
+  return done(null, user, token);
+});

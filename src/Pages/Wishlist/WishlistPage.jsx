@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/Utils/api'
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,7 @@ export default function WishlistPage({ onUpdate }) {
         account: accounts[0],
       })
       const token = tokenResponse.accessToken
-      const res = await axios.get(`${API_URL}/wishlist`, {
+      const res = await api.get(`${API_URL}/wishlist`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -59,7 +59,7 @@ export default function WishlistPage({ onUpdate }) {
   const handleDecrease = async (itemId, currentQty) => {
     try {
       if (currentQty <= 1) {
-        await axios.delete(`${API_URL}/wishlist/${itemId}`, {
+        await api.delete(`${API_URL}/wishlist/${itemId}`, {
           data: { user_id: 2 },
         })
         await onUpdate()
@@ -68,7 +68,7 @@ export default function WishlistPage({ onUpdate }) {
       }
 
       const newQty = currentQty - 1
-      await axios.patch(`${API_URL}/wishlist/${itemId}`, {
+      await api.patch(`${API_URL}/wishlist/${itemId}`, {
         user_id: 2,
         default_quantity: newQty,
       })
@@ -83,7 +83,7 @@ export default function WishlistPage({ onUpdate }) {
   const handleIncrease = async (itemId, currentQty) => {
     try {
       const newQty = currentQty + 1
-      await axios.patch(`${API_URL}/wishlist/${itemId}`, {
+      await api.patch(`${API_URL}/wishlist/${itemId}`, {
         user_id: 2,
         default_quantity: newQty,
       })
@@ -97,7 +97,7 @@ export default function WishlistPage({ onUpdate }) {
 
   const handleDelete = async (itemId) => {
     try {
-      await axios.delete(`${API_URL}/wishlist/${itemId}`)
+      await api.delete(`${API_URL}/wishlist/${itemId}`)
       await onUpdate()
       fetchWishlist()
     } catch (error) {
@@ -145,7 +145,7 @@ export default function WishlistPage({ onUpdate }) {
         }))
 
       // ส่งตาม format ที่ต้องการ
-      const response = await axios.post(`${API_URL}/withdraw`, {
+      const response = await api.post(`${API_URL}/withdraw`, {
         requestedBy: 2, // user_id
         topic: {
           fullname: formData.fullname,
@@ -161,7 +161,7 @@ export default function WishlistPage({ onUpdate }) {
         alert('เบิกของสำเร็จ!')
 
         for (const item of itemsToWithdraw) {
-          await axios.delete(`${API_URL}/wishlist/${item.item_id}`, {
+          await api.delete(`${API_URL}/wishlist/${item.item_id}`, {
             data: { user_id: 2 },
           })
         }

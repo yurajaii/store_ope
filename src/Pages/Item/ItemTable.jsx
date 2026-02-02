@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from '@/Utils/api'
 import { useState, useContext } from 'react'
 import { ShoppingBasket, Settings, Trash2, Undo2 } from 'lucide-react'
 import ItemDialog from './ItemDialog'
@@ -28,7 +28,7 @@ export default function ItemTable({
 
   const handleAdd = async (itemId, qty) => {
     try {
-      await axios.post(`${API_URL}/wishlist`, {
+      await api.post(`${API_URL}/wishlist`, {
         item_id: itemId,
         quantity: qty,
         user_id: user.id,
@@ -47,7 +47,7 @@ export default function ItemTable({
 
   const handleDeleteItem = async (itemId) => {
     try {
-      await axios.patch(`${API_URL}/items/${itemId}/delete`)
+      await api.patch(`${API_URL}/items/${itemId}/delete`)
       await onUpdate()
     } catch (error) {
       console.error('Delete error:', error)
@@ -56,7 +56,7 @@ export default function ItemTable({
 
   const handleRestoreItem = async (itemId) => {
     try {
-      await axios.patch(`${API_URL}/items/${itemId}/restore`)
+      await api.patch(`${API_URL}/items/${itemId}/restore`)
       await onUpdate()
     } catch (error) {
       console.error('Delete error:', error)
@@ -65,7 +65,7 @@ export default function ItemTable({
 
   const handleUpdate = async (payload) => {
     try {
-      await axios.patch(`${API_URL}/items/${selectedItem.item_id}`, payload)
+      await api.patch(`${API_URL}/items/${selectedItem.item_id}`, payload)
       setEditDialogOpen(false)
       await onUpdate()
     } catch (error) {

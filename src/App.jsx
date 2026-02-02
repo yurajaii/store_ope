@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { useEffect, useContext } from 'react'
+import api from './Utils/api'
 import SideBar from './components/SideBar'
 import HomePage from './Pages/Home/HomePage'
 import CategoryPage from './Pages/Category/CategoryPage'
@@ -31,10 +32,11 @@ export default function App() {
   // 2. ดึงข้อมูลจาก Backend ครั้งเดียว
   useEffect(() => {
     const fetchUserData = async () => {
+      // เงื่อนไข: ต้องล็อคอินแล้ว มีบัญชี และยังไม่ได้โหลดข้อมูล User เข้า Context
       if (isAuthenticated && accounts.length > 0 && !user) {
         setLoading(true)
         try {
-          // 1. ขอ Token สำหรับ Microsoft Graph (เพื่อเอา displayName, mail)
+          // ก. ขอ Token สำหรับ Microsoft Graph (อันนี้ยังใช้ fetch แยกต่างหากได้เพราะ scope คนละตัว)
           const graphTokenRes = await instance.acquireTokenSilent({
             scopes: ['User.Read'],
             account: accounts[0],
@@ -43,36 +45,21 @@ export default function App() {
           const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
             headers: { Authorization: `Bearer ${graphTokenRes.accessToken}` },
           })
-          const { displayName, mail, jobTitle, officeLocation } = await graphRes.json()
+          const profile = await graphRes.json()
 
-          // 2. ขอ Token สำหรับ Backend ของคุณ (เพื่อให้ aud ตรงกับ api://f759d6b0...)
-          const backendTokenRes = await instance.acquireTokenSilent({
-            scopes: ['api://f759d6b0-6c0b-4316-ad63-84ba6492af49/access_as_user'],
-            account: accounts[0],
-          })
-          console.log(backendTokenRes)
-          // 3. ส่งข้อมูลไปที่ Backend
-          const backendRes = await fetch(`${API_URL}/auth/me`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${backendTokenRes.accessToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ displayName, mail, jobTitle, officeLocation }),
+          // ข. ส่งข้อมูลไปที่ Backend โดยใช้ api.js
+          // *** ไม่ต้องใส่ headers Authorization เองแล้ว เพราะ Interceptor ใน api.js จัดการให้! ***
+          const response = await api.post('/auth/me', {
+            displayName: profile.displayName,
+            mail: profile.mail,
+            jobTitle: profile.jobTitle,
+            officeLocation: profile.officeLocation,
           })
 
-          const data = await backendRes.json()
-          if (data.success) {
-            setUser(data.user)
+          if (response.data.success) {
+            setUser(response.data.user)
           }
-          // ใน App.jsx ส่วน catch ของ fetchUserData
         } catch (e) {
-          if (e.name === 'InteractionRequiredAuthError') {
-            // ใช้ Redirect แทน Popup เพื่อเลี่ยงปัญหาโดน Browser บล็อค
-            instance.acquireTokenRedirect({
-              scopes: ['api://f759d6b0-6c0b-4316-ad63-84ba6492af49/access_as_user'],
-            })
-          }
           console.error('❌ Backend Sync Error:', e)
         } finally {
           setLoading(false)
@@ -80,7 +67,7 @@ export default function App() {
       }
     }
     fetchUserData()
-  }, [isAuthenticated, accounts, instance, API_URL, user, setLoading, setUser])
+  }, [isAuthenticated, accounts, instance, user, setLoading, setUser])
 
   // 3. หน้า Loading ระหว่างรอ Backend ตอบกลับ (สำคัญมาก!)
   if (isAuthenticated && !user) {

@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/Utils/api'
 
 export default function InventoryDialog({ open, onClose, items = [], onUpdate }) {
   const [selectedItemId, setSelectedItemId] = useState('')
@@ -47,7 +47,7 @@ export default function InventoryDialog({ open, onClose, items = [], onUpdate })
         remark: remark,
       }
 
-      await axios.post(`${API_URL}/inventory/log`, payload)
+      await api.post(`${API_URL}/inventory/log`, payload)
 
       if (onUpdate) onUpdate()
       onClose()

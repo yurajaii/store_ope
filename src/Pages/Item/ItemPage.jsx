@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect, useContext } from 'react'
-import axios from 'axios'
 import { CircleX } from 'lucide-react'
 import ItemTable from './ItemTable'
 import ItemDialog from './ItemDialog'
@@ -14,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { UserContext } from '@/Context/UserContextInstance'
+import api from '@/Utils/api'
 
 export default function Package({ onUpdate }) {
   const [categories, setCategories] = useState([])
@@ -39,7 +39,7 @@ export default function Package({ onUpdate }) {
 
   const fetchCategory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/category`)
+      const res = await api.get(`${API_URL}/category`)
       setCategories(res.data.categories)
     } catch (error) {
       console.error(error)
@@ -47,6 +47,7 @@ export default function Package({ onUpdate }) {
   }
 
   const fetchItems = async () => {
+    if (!user) return
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -65,7 +66,7 @@ export default function Package({ onUpdate }) {
         params.append('category_id', selectedSubchainId)
       }
 
-      const res = await axios.get(`${API_URL}/items?${params.toString()}`)
+      const res = await api.get(`${API_URL}/items?${params.toString()}`)
       setItems(res.data.items || [])
       setTotalPages(res.data.pagination?.totalPages || 1)
     } catch (error) {
@@ -203,7 +204,7 @@ export default function Package({ onUpdate }) {
         mode="add"
         categories={categories}
         onSubmit={async (payload) => {
-          await axios.post(`${API_URL}/items`, payload)
+          await api.post(`${API_URL}/items`, payload)
           setDialogOpen(false)
           handleItemUpdate()
         }}
