@@ -31,7 +31,6 @@ export default function ItemTable({
       await api.post(`${API_URL}/wishlist`, {
         item_id: itemId,
         quantity: qty,
-        user_id: user.id,
       })
       setQuantities((prev) => ({ ...prev, [itemId]: 1 }))
       await onUpdate()

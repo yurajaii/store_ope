@@ -5,7 +5,6 @@ const router = express.Router()
 
 export default function WishList(db) {
   router.get('/', requireAuth, async (req, res) => {
-    console.log('User object from Passport:', req.user)
     const userId = req.user?.oid
 
     if (!userId) {
@@ -30,7 +29,8 @@ export default function WishList(db) {
   })
 
   router.post('/', async (req, res) => {
-    const { item_id, user_id, quantity } = req.body
+    const { item_id, quantity } = req.body
+    const user_id = req.user?.oid
 
     try {
       await db.query(
@@ -54,7 +54,8 @@ export default function WishList(db) {
 
   router.patch('/:itemId', async (req, res) => {
     const itemId = req.params.itemId
-    const { user_id, default_quantity } = req.body
+    const { default_quantity } = req.body
+    const user_id = req.user?.id || 2
 
     await db.query(
       `
@@ -69,18 +70,23 @@ export default function WishList(db) {
   })
 
   router.delete('/:itemId', async (req, res) => {
-    const user_id = req.body?.user_id || 2
+    const user_id = req.user?.id || 2
     const itemId = req.params.itemId
-
-    await db.query(
-      `
+    console.log('Fetching Data by user_id', user_id)
+    try {
+      await db.query(
+        `
       DELETE FROM item_favorites
       WHERE user_id = $1 AND item_id = $2
       `,
-      [user_id, itemId]
-    )
+        [user_id, itemId]
+      )
 
-    res.json({ success: true })
+      res.json({ success: true })
+    } catch (error) {
+      console.error(error)
+      return res.status(500).json({ success: false })
+    }
   })
 
   return router
