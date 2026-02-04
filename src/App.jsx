@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import { useEffect, useContext } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
+import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import api from './Utils/api'
+
 import SideBar from './components/SideBar'
 import HomePage from './Pages/Home/HomePage'
 import CategoryPage from './Pages/Category/CategoryPage'
@@ -14,14 +16,18 @@ import { AdminPage } from './Pages/Admin/AdminPage'
 import { FloatingCartButton } from './components/FAB'
 import { useFavorites } from './hooks/useFavorite'
 import { UserContext } from './Context/UserContextInstance'
+
+
 export default function App() {
+  // Provider ของ msal จะได้มาก็ต่อเมื่อ login สำเร็จ
   const { instance, accounts } = useMsal()
   const isAuthenticated = useIsAuthenticated()
+
   const { favoriteCount, fetchFavorites } = useFavorites()
+
   const { user, setUser, setLoading } = useContext(UserContext)
 
-  const API_URL = import.meta.env.VITE_API_URL
-
+// #################################### คือเอา msal instant, account มันอัพเดท backend ของเรา คือเราจะไม่ได้ใช้ข้อมูลจาก msal อย่างเดียว แต่จะใช้การยืนยันตัวคนและข้อมูลจาก msal บันทึกลง db แล้ว CRUD ในนั้น
   // 1. จัดการ Account Active
   useEffect(() => {
     if (accounts.length > 0 && !instance.getActiveAccount()) {
@@ -36,7 +42,7 @@ export default function App() {
       if (isAuthenticated && accounts.length > 0 && !user) {
         setLoading(true)
         try {
-          // ก. ขอ Token สำหรับ Microsoft Graph (อันนี้ยังใช้ fetch แยกต่างหากได้เพราะ scope คนละตัว)
+          // ก. ขอ Token สำหรับ Microsoft Graph (อันนี้ยังใช้ fetch แยกต่างหากได้เพราะ scope คนละตัว)+
           const graphTokenRes = await instance.acquireTokenSilent({
             scopes: ['User.Read'],
             account: accounts[0],

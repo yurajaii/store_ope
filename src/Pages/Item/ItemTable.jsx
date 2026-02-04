@@ -112,9 +112,24 @@ export default function ItemTable({
             {/* Table Body */}
             <tbody className="bg-white divide-y divide-gray-200">
               {data
-                .sort((a, b) => a.item_id - b.item_id)
+                .sort((a, b) => {
+                  const aStock = a.quantity > 0 ? 1 : 0
+                  const bStock = b.quantity > 0 ? 1 : 0
+
+                  if (aStock !== bStock) {
+                    return bStock - aStock
+                  }
+                  return b.quantity - a.quantity
+                })
                 .map((item) => (
-                  <tr key={item.item_id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={item.item_id}
+                    className={`transition-colors ${
+                      item.quantity === 0 && user.role == 'user'
+                        ? 'bg-gray-200 opacity-60 cursor-not-allowed pointer-events-none grayscale'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">#{item.item_id}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{item.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">
@@ -122,16 +137,26 @@ export default function ItemTable({
                         {item.category} :: {item.subcategory}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-center">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <td className="px-6 py-4 text-center">
+                      <div
+                        className={`inline-flex items-center px-3 rounded-full py-1 text-[10px] font-bold shadow-sm ${
+                          item.quantity < item.min_threshold
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : item.quantity > item.max_threshold
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}
                       >
-                        {item.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                        {item.quantity === 0
+                          ? 'สินค้าหมด'
+                          : item.quantity < item.min_threshold
+                            ? 'ต่ำกว่าเกณฑ์'
+                            : item.quantity > item.max_threshold
+                              ? 'สูงกว่าเกณฑ์'
+                              : 'ปกติ'}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-right font-semibold text-gray-700">
+                    <td className="px-6 py-4 text-sm text-center font-semibold text-gray-700">
                       {item.quantity.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-sm text-center text-gray-600">

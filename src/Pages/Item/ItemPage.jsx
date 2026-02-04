@@ -139,10 +139,10 @@ export default function Package({ onUpdate }) {
               <SelectTrigger className="w-40 h-11 border-gray-300">
                 <SelectValue placeholder="หมวดหลัก" />
               </SelectTrigger>
-              <SelectContent className="font-[Prompt]">
-                <SelectItem value="__all__">หมวดหลักทั้งหมด</SelectItem>
+              <SelectContent className="font-[Prompt] ">
+                <SelectItem value="__all__" >หมวดหลักทั้งหมด</SelectItem>
                 {mainCategories.map((cat) => (
-                  <SelectItem className="text-gray-500" key={cat} value={cat}>
+                  <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
                 ))}
