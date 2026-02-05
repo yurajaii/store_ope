@@ -212,7 +212,7 @@ export default function LogPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">{log.remark || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {log.created_by || 'ระบบ'}
+                          {`${log.job_title} (${log.office_location}) `}
                         </td>
                       </tr>
                     ))}

@@ -39,14 +39,22 @@ export default function ItemList(db) {
 
       const dataQuery = `
       SELECT inv.*, i.name, i.unit, i.is_active, i.min_threshold, i.max_threshold, 
-             c.category, c.subcategory, i.category_id
+            c.category, c.subcategory, i.category_id
       FROM inventories AS inv
       LEFT JOIN items AS i ON inv.item_id = i.id
       LEFT JOIN categories AS c ON i.category_id = c.id
       ${whereClause}
-      ORDER BY inv.id DESC
+      ORDER BY 
+        -- 1. ดันของที่ Active และมีของ (quantity > 0) ขึ้นก่อน
+        (CASE 
+            WHEN i.is_active = true AND inv.quantity > 0 THEN 0 
+            WHEN i.is_active = true AND inv.quantity <= 0 THEN 1 
+            ELSE 2 
+        END) ASC, 
+        -- 2. เรียงตาม ID ล่าสุดภายในกลุ่ม
+        inv.id DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `
+      `
       queryParams.push(limit, offset)
 
       const dataResult = await db.query(dataQuery, queryParams)

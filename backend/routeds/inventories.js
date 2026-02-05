@@ -179,15 +179,19 @@ export default function InventoryList(db) {
 
     try {
       let query = `
+
+
       SELECT 
         l.*, 
         i.name AS item_name, 
         c.category AS category_name,
         c.subcategory AS subcategory_name,
-        COUNT(*) OVER() AS total_count
+		users.email, users.display_name, users.role ,users.job_title , users.office_location,
+		COUNT(*) OVER() AS total_count
       FROM inventory_logs l
       JOIN items i ON l.item_id = i.id
       LEFT JOIN categories c ON i.category_id = c.id
+	  LEFT JOIN users ON l.created_by = users.id
       WHERE 1=1
     `
       const params = []

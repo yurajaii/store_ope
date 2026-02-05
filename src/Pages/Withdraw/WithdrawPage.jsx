@@ -1,8 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import api from '@/Utils/api'
-import { Ellipsis } from 'lucide-react'
+import { Ellipsis, CircleX } from 'lucide-react'
 import toThaiTime from '@/Utils/toThaiTime'
+import { UserContext } from '@/Context/UserContextInstance'
+
 import {
   Dialog,
   DialogContent,
@@ -24,6 +26,8 @@ export default function WithdrawPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const limit = 20
+
+  const { user } = useContext(UserContext)
 
   const API_URL = import.meta.env.VITE_API_URL
 
@@ -119,7 +123,7 @@ export default function WithdrawPage() {
       item.approved_quantity
     )
 
-    if (returnQty === null) return 
+    if (returnQty === null) return
 
     const qty = parseInt(returnQty)
     if (isNaN(qty) || qty <= 0 || qty > item.approved_quantity) {
@@ -132,7 +136,7 @@ export default function WithdrawPage() {
         item_id: item.item_id,
         type: 'RETURN',
         quantity: qty,
-        reference_id: `WITHDRAW-#${withdrawId}`, 
+        reference_id: `WITHDRAW-#${withdrawId}`,
         remark: `คืนพัสดุจากใบเบิก #${withdrawId}`,
       }
 
@@ -173,6 +177,25 @@ export default function WithdrawPage() {
         </div>
         {/* Content */}
         <div className="bg-white px-10 py-4 h-full">
+          <div className="flex border border-gray-300 rounded px-2 py-2">
+            <input
+              type="text"
+              name="search"
+              // value={searchQuery}
+              // onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ค้นหาชื่อ/รหัสพัสดุ"
+              className="
+                outline-none
+                focus:outline-none
+                focus:ring-0
+                active:outline-none
+                active:ring-0
+              "
+            />
+            <button className="text-gray-400">
+              <CircleX />
+            </button>
+          </div>
           {/* Sort Button */}
           <div className="mb-4">
             <button
@@ -290,7 +313,11 @@ export default function WithdrawPage() {
                 <p className="mt-3">กำลังโหลด...</p>
               </div>
             ) : selectedWithdraw ? (
-              <div className="py-4 space-y-6">
+              <div
+                className={`space-y-4 py-4 transition-all ${
+                  user?.role === 'user' ? 'pointer-events-none opacity-100 cursor-not-allowed' : ''
+                }`}
+              >
                 {/* ข้อมูลผู้ขอเบิก */}
                 <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
                   <div>
@@ -514,7 +541,7 @@ export default function WithdrawPage() {
                 ปิด
               </button>
 
-              {selectedWithdraw?.status === 'REQUESTED' && !loading && (
+              {selectedWithdraw?.status === 'REQUESTED' && !loading && user.role != 'user' && (
                 <button
                   onClick={handleApprove}
                   className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded ml-2"

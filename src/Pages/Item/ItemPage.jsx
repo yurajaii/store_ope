@@ -20,6 +20,7 @@ export default function Package({ onUpdate }) {
   const [selectedCategory, setSelectedCategory] = useState('__all__')
   const [selectedSubchainId, setSelectedSubchainId] = useState('__all__')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [items, setItems] = useState([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [inventoryDialogOpen, setInventoryDialogOpen] = useState(false)
@@ -74,6 +75,16 @@ export default function Package({ onUpdate }) {
     }
   }
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 500)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [searchQuery])
+
   const handleItemUpdate = async () => {
     await fetchItems()
     if (onUpdate) {
@@ -84,7 +95,7 @@ export default function Package({ onUpdate }) {
   useEffect(() => {
     setPage(1)
     fetchItems()
-  }, [selectedCategory, selectedSubchainId, searchQuery])
+  }, [selectedCategory, selectedSubchainId, debouncedSearch])
 
   useEffect(() => {
     fetchItems()
@@ -140,7 +151,7 @@ export default function Package({ onUpdate }) {
                 <SelectValue placeholder="หมวดหลัก" />
               </SelectTrigger>
               <SelectContent className="font-[Prompt] ">
-                <SelectItem value="__all__" >หมวดหลักทั้งหมด</SelectItem>
+                <SelectItem value="__all__">หมวดหลักทั้งหมด</SelectItem>
                 {mainCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}

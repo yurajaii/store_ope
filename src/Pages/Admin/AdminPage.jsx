@@ -10,7 +10,7 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-react'
-import axios from 'axios'
+import api from '@/Utils/api'
 
 export function AdminPage() {
   const [users, setUsers] = useState([])
@@ -27,7 +27,7 @@ export function AdminPage() {
     setFetchLoading(true)
     setError(null)
     try {
-      const response = await axios.get(`${API_URL}/auth`)
+      const response = await api.get(`${API_URL}/auth`)
 
       const userData = Array.isArray(response.data)
         ? response.data
@@ -53,7 +53,7 @@ const handleRoleChange = async (userId, newRole) => {
 
   setLoading(true);
   try {
-    const response = await axios.patch(`${API_URL}/auth/${userId}/role`, { 
+    const response = await api.patch(`${API_URL}/auth/${userId}/role`, { 
       role: newRole 
     });
 
