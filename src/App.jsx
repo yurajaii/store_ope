@@ -1,5 +1,6 @@
 import { useEffect, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
 import api from './Utils/api'
@@ -17,7 +18,6 @@ import { FloatingCartButton } from './components/FAB'
 import { useFavorites } from './hooks/useFavorite'
 import { UserContext } from './Context/UserContextInstance'
 
-
 export default function App() {
   // Provider ของ msal จะได้มาก็ต่อเมื่อ login สำเร็จ
   const { instance, accounts } = useMsal()
@@ -27,7 +27,7 @@ export default function App() {
 
   const { user, setUser, setLoading } = useContext(UserContext)
 
-// #################################### คือเอา msal instant, account มันอัพเดท backend ของเรา คือเราจะไม่ได้ใช้ข้อมูลจาก msal อย่างเดียว แต่จะใช้การยืนยันตัวคนและข้อมูลจาก msal บันทึกลง db แล้ว CRUD ในนั้น
+  // #################################### คือเอา msal instant, account มันอัพเดท backend ของเรา คือเราจะไม่ได้ใช้ข้อมูลจาก msal อย่างเดียว แต่จะใช้การยืนยันตัวคนและข้อมูลจาก msal บันทึกลง db แล้ว CRUD ในนั้น
   // 1. จัดการ Account Active
   useEffect(() => {
     if (accounts.length > 0 && !instance.getActiveAccount()) {
@@ -92,6 +92,7 @@ export default function App() {
       <div className="w-full h-screen bg-gray-100 font-[prompt] flex">
         {isAuthenticated && user ? (
           <>
+            <Toaster position="top-right" reverseOrder={false} />
             <SideBar />
             <main className="flex-1 overflow-auto">
               <Routes>

@@ -95,7 +95,7 @@ export default function InventoryList(db) {
         await client.query('ROLLBACK')
         return res.status(404).json({
           success: false,
-          message: 'Item not found',
+          message: 'ไม่พบพัสดุหมายเลขนี้',
         })
       }
 

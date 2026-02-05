@@ -6,6 +6,7 @@ import CategoryDialog from './CategoryDialog'
 import { CircleX } from 'lucide-react'
 import { useState, useEffect, useContext } from 'react'
 import { UserContext } from '@/Context/UserContextInstance'
+import toast from 'react-hot-toast'
 const API_URL = import.meta.env.VITE_API_URL
 
 export default function CategoryPage() {
@@ -68,24 +69,23 @@ export default function CategoryPage() {
             <p className="text-3xl font-bold">หมวดหมู่พัสดุ</p>
             <p className="text-gray-400">จัดการหมวดหมู่พัสดุของคุณ</p>
           </div>
-          {user?.role === 'system_admin' ||
-            (user?.role === 'user_admin' && (
-              <button
-                className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
-                onClick={() => {
-                  setEditData(
-                    selectedCategory
-                      ? {
-                          category: selectedCategory,
-                        }
-                      : null
-                  )
-                  setDialogOpen(true)
-                }}
-              >
-                + เพิ่มหมวดใหม่
-              </button>
-            ))}
+          {(user?.role === 'system_admin' || user?.role === 'user_admin') && (
+            <button
+              className="p-2 px-4 bg-primary w-fit h-fit rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
+              onClick={() => {
+                setEditData(
+                  selectedCategory
+                    ? {
+                        category: selectedCategory,
+                      }
+                    : null
+                )
+                setDialogOpen(true)
+              }}
+            >
+              + เพิ่มหมวดใหม่
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -186,8 +186,10 @@ export default function CategoryPage() {
         onSubmit={async (data) => {
           if (editData?.id) {
             await api.put(`${API_URL}/category/${data.id}`, data)
+            toast.success('อัพเดทสำเร็จ')
           } else {
             await api.post(`${API_URL}/category`, data)
+            toast.success('เพิ่มหมวดหมู่สำเร็จ')
           }
           setDialogOpen(false)
           fetchCategory()

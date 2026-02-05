@@ -56,7 +56,6 @@ export default function CategoryDialog({ mode, defaultData, open, onClose, onSub
               value={category}
               onChange={(e) => {
                 setCategory(e.target.value)
-                console.log(e.target.value)
               }}
               placeholder="เช่น ไฟฟ้า"
               disabled={mode === 'edit'}
@@ -75,13 +74,6 @@ export default function CategoryDialog({ mode, defaultData, open, onClose, onSub
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Icon</label>
-            {/* <input
-              className="border p-2 rounded"
-              value={iconKey}
-              onChange={(e) => setIconKey(e.target.value)}
-              placeholder="เช่น box หรือ lightbulb"
-            /> */}
-
             <div className="grid grid-cols-4 gap-3">
               {CATEGORY_ICON_MAP.map(({ key, Icon }) => (
                 <button

@@ -1,7 +1,10 @@
 import api from '@/Utils/api'
 import { useState, useContext } from 'react'
 import { ShoppingBasket, Settings, Trash2, Undo2 } from 'lucide-react'
+import toast from 'react-hot-toast'
+
 import ItemDialog from './ItemDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { UserContext } from '@/Context/UserContextInstance'
 
 export default function ItemTable({
@@ -16,6 +19,8 @@ export default function ItemTable({
   const [quantities, setQuantities] = useState({})
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState(null)
   const { user } = useContext(UserContext)
 
   if (data.length === 0) {
@@ -25,6 +30,10 @@ export default function ItemTable({
       </div>
     )
   }
+  const openDeleteDialog = (item) => {
+    setItemToDelete(item)
+    setDeleteConfirmOpen(true)
+  }
 
   const handleAdd = async (itemId, qty) => {
     try {
@@ -33,6 +42,7 @@ export default function ItemTable({
         quantity: qty,
       })
       setQuantities((prev) => ({ ...prev, [itemId]: 1 }))
+       toast.success(`เพิ่มพัสดุลงตระกร้าแล้ว`)
       await onUpdate()
     } catch (err) {
       console.error(err)
@@ -44,11 +54,16 @@ export default function ItemTable({
     setEditDialogOpen(true)
   }
 
-  const handleDeleteItem = async (itemId) => {
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return
     try {
-      await api.patch(`${API_URL}/items/${itemId}/delete`)
+      await api.patch(`${API_URL}/items/${itemToDelete.item_id}/delete`)
       await onUpdate()
+      setDeleteConfirmOpen(false)
+      setItemToDelete(null)
+      toast.success(`${itemToDelete.name} ถูกลบสำเร็จ`)
     } catch (error) {
+      toast.error('เกิดข้อผิดพลาดในการลบ')
       console.error('Delete error:', error)
     }
   }
@@ -57,8 +72,10 @@ export default function ItemTable({
     try {
       await api.patch(`${API_URL}/items/${itemId}/restore`)
       await onUpdate()
+      toast.success(`กู้คืนพัสดุสำเร็จ`)
     } catch (error) {
       console.error('Delete error:', error)
+      toast.error('เกิดข้อผิดพลาดในการกู้คืน')
     }
   }
 
@@ -66,10 +83,11 @@ export default function ItemTable({
     try {
       await api.patch(`${API_URL}/items/${selectedItem.item_id}`, payload)
       setEditDialogOpen(false)
+      toast.success(`${selectedItem.name} ถูกอัพเดทแล้ว`)
       await onUpdate()
     } catch (error) {
       console.error('Update error:', error)
-      alert('เกิดข้อผิดพลาดในการอัปเดตข้อมูล')
+      toast.error('เกิดข้อผิดพลาดในการอัปเดตข้อมูล')
     }
   }
 
@@ -110,6 +128,8 @@ export default function ItemTable({
 
             {/* Table Body */}
             <tbody className="bg-white divide-y divide-gray-200">
+              {console.log(data)
+              }
               {data
                 .sort((a, b) => {
                   const aStock = a.quantity > 0 ? 1 : 0
@@ -208,7 +228,7 @@ export default function ItemTable({
                           ) : (
                             <button
                               className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors disabled:opacity-30"
-                              onClick={() => handleDeleteItem(item.item_id)}
+                              onClick={() => openDeleteDialog(item)}
                               title="ลบพัสดุ"
                             >
                               <Trash2 size={20} />
@@ -244,8 +264,14 @@ export default function ItemTable({
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleConfirmDelete}
+        title="ยืนยันการลบพัสดุ?"
+        description={`คุณแน่ใจหรือไม่ว่าต้องการลบ "${itemToDelete?.name}"? รายการนี้จะถูกย้ายไปอยู่ในกลุ่มพัสดุที่ไม่ใช้งาน`}
+      />
 
-      {/* Edit Dialog */}
       <ItemDialog
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}

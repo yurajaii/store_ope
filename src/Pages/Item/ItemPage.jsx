@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect, useContext } from 'react'
+import toast from 'react-hot-toast'
 import { CircleX } from 'lucide-react'
 import ItemTable from './ItemTable'
 import ItemDialog from './ItemDialog'
@@ -217,6 +218,7 @@ export default function Package({ onUpdate }) {
         onSubmit={async (payload) => {
           await api.post(`${API_URL}/items`, payload)
           setDialogOpen(false)
+          toast.success('ลงทะเบียนพัสดุสำเร็จ')
           handleItemUpdate()
         }}
       />
@@ -224,7 +226,10 @@ export default function Package({ onUpdate }) {
         open={inventoryDialogOpen}
         onClose={() => setInventoryDialogOpen(false)}
         items={items}
-        onUpdate={handleItemUpdate}
+        onUpdate={async () => {
+          await handleItemUpdate()
+          toast.success('บันทึกรายการลงคลังสำเร็จ')
+        }}
       />
     </>
   )

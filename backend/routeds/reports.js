@@ -69,6 +69,7 @@ export default function Reported(db) {
 
     const allowedScales = ['day', 'week', 'month']
     const timeScale = allowedScales.includes(groupBy) ? groupBy : 'day'
+
     let queryParams = [startDate, endDate]
     let categoryFilter = ''
     let itemFilter = ''
@@ -84,7 +85,12 @@ export default function Reported(db) {
     }
 
     const query = `
-    WITH daily_summaries AS (
+    WITH date_series AS (
+        -- 1. สร้างซีรีส์ของวันที่ตามช่วงที่เลือก เพื่อให้มีข้อมูลทุกวัน
+        SELECT generate_series($1::timestamp, $2::timestamp, '1 ${timeScale}')::timestamp AS time_bucket
+    ),
+    actual_logs AS (
+        -- 2. ดึงข้อมูลการเบิกจ่ายจริง
         SELECT 
             DATE_TRUNC('${timeScale}', il.created_at) AS time_bucket,
             SUM(il.quantity) AS total_qty
@@ -96,13 +102,23 @@ export default function Reported(db) {
           ${itemFilter}
         GROUP BY 1
     ),
+    daily_summaries AS (
+        -- 3. LEFT JOIN เพื่อเติม 0 ในวันที่ไม่มีการเคลื่อนไหว
+        SELECT 
+            ds.time_bucket,
+            COALESCE(al.total_qty, 0) AS total_qty
+        FROM date_series ds
+        LEFT JOIN actual_logs al ON ds.time_bucket = al.time_bucket
+    ),
     baseline AS (
+        -- 4. คำนวณค่าเฉลี่ยจากทุกวัน (รวมวันที่เป็น 0 ด้วยเพื่อให้ Index แม่นยำ)
         SELECT AVG(total_qty) as period_avg FROM daily_summaries
     )
     SELECT 
         d.time_bucket,
         d.total_qty as actual_usage,
-        ROUND((d.total_qty / NULLIF(b.period_avg, 0)) * 100, 2) as usage_index
+        -- 5. คำนวณ Index โดยเทียบกับค่าเฉลี่ยของทั้งช่วง
+        COALESCE(ROUND((d.total_qty / NULLIF(b.period_avg, 0)) * 100, 2), 0) as usage_index
     FROM daily_summaries d, baseline b
     ORDER BY d.time_bucket ASC;
   `

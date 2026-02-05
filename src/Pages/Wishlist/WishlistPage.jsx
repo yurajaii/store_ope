@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useMsal } from '@azure/msal-react'
 
 export default function WishlistPage({ onUpdate }) {
@@ -38,7 +39,7 @@ export default function WishlistPage({ onUpdate }) {
       })
       return response.accessToken
     } catch (error) {
-      console.error("Token acquisition failed:", error)
+      console.error('Token acquisition failed:', error)
       return null
     }
   }
@@ -49,7 +50,7 @@ export default function WishlistPage({ onUpdate }) {
       const token = await getAccessToken()
       if (!token) return
 
-      const res = await api.get(`${API_URL}/wishlist`,)
+      const res = await api.get(`${API_URL}/wishlist`)
       setWishlist(res.data)
     } catch (err) {
       console.error(err)
@@ -73,7 +74,6 @@ export default function WishlistPage({ onUpdate }) {
       if (!token) return
 
       if (currentQty <= 1) {
-        // ลบออกจากตะกร้าเมื่อจำนวนเป็น 1 แล้วกดลด
         await api.delete(`${API_URL}/wishlist/${itemId}`)
         await onUpdate()
         fetchWishlist()
@@ -81,9 +81,7 @@ export default function WishlistPage({ onUpdate }) {
       }
 
       const newQty = currentQty - 1
-      await api.patch(`${API_URL}/wishlist/${itemId}`, 
-        { default_quantity: newQty }
-      )
+      await api.patch(`${API_URL}/wishlist/${itemId}`, { default_quantity: newQty })
 
       await onUpdate()
       fetchWishlist()
@@ -98,9 +96,7 @@ export default function WishlistPage({ onUpdate }) {
       if (!token) return
 
       const newQty = currentQty + 1
-      await api.patch(`${API_URL}/wishlist/${itemId}`, 
-        { default_quantity: newQty }
-      )
+      await api.patch(`${API_URL}/wishlist/${itemId}`, { default_quantity: newQty })
 
       await onUpdate()
       fetchWishlist()
@@ -117,6 +113,7 @@ export default function WishlistPage({ onUpdate }) {
       await api.delete(`${API_URL}/wishlist/${itemId}`)
       await onUpdate()
       fetchWishlist()
+      toast.success('ลบสินค้าออกจากตระกร้าแล้ว')
     } catch (error) {
       console.error(error)
     }
@@ -140,8 +137,8 @@ export default function WishlistPage({ onUpdate }) {
 
   const handleSubmitWithdraw = async () => {
     try {
-      if (Object.values(formData).some(val => !val.trim())) {
-        alert('กรุณากรอกข้อมูลให้ครบทุกช่อง')
+      if (Object.values(formData).some((val) => !val.trim())) {
+        toast.error('กรุณากรอกข้อมูลให้ครบทุกช่อง')
         return
       }
 
@@ -155,22 +152,19 @@ export default function WishlistPage({ onUpdate }) {
           quantity: w.default_quantity,
         }))
 
-      // ส่งใบเบิกพัสดุ
       const response = await api.post(`${API_URL}/withdraw`, {
-        requestedBy: userOid, // ใช้ ID จาก Token
+        requestedBy: userOid,
         topic: { ...formData },
         items: itemsToWithdraw,
       })
 
       if (response.data.success) {
-        alert('เบิกของสำเร็จ!')
+        toast.success(`สร้างใบเบิกหมายเลข ${response.data.withdraw_id} สำเร็จ!`)
 
-        // ล้างรายการที่เบิกออกจากตะกร้า
         for (const item of itemsToWithdraw) {
           await api.delete(`${API_URL}/wishlist/${item.item_id}`)
         }
 
-        // Reset States
         setSelectedItems({})
         setFormData({ fullname: '', phone: '', department: '', purpose: '', project: '' })
         setDialogOpen(false)
@@ -179,7 +173,7 @@ export default function WishlistPage({ onUpdate }) {
       }
     } catch (err) {
       console.error(err)
-      alert('เกิดข้อผิดพลาดในการเบิก')
+      toast.error('เกิดข้อผิดพลาดในการเบิก')
     }
   }
 
@@ -205,24 +199,35 @@ export default function WishlistPage({ onUpdate }) {
               <div className="text-center py-20 text-gray-500">ยังไม่มีพัสดุในตะกร้า</div>
             ) : (
               wishlist.map((w) => (
-                <div key={w.item_id} className="flex items-center justify-between gap-3 p-4 pl-8 border-b hover:bg-gray-50 transition-colors">
+                <div
+                  key={w.item_id}
+                  className="flex items-center justify-between gap-3 p-4 pl-8 border-b hover:bg-gray-50 transition-colors"
+                >
                   <input
                     type="checkbox"
                     checked={selectedItems[w.item_id] || false}
                     onChange={() => handleCheckbox(w.item_id)}
                     className="w-5 h-5 accent-indigo-600 cursor-pointer"
                   />
-                  <div className="font-medium flex-1 ml-4 text-gray-700">{w.name} <span className="text-xs text-gray-400">({w.unit})</span></div>
+                  <div className="font-medium flex-1 ml-4 text-gray-700">
+                    {w.name} <span className="text-xs text-gray-400">({w.unit})</span>
+                  </div>
                   <div className="flex items-center bg-gray-100 rounded-lg p-1">
                     <button
                       className="flex items-center justify-center w-8 h-8 bg-white hover:bg-gray-200 text-gray-600 rounded shadow-sm transition-colors"
                       onClick={() => handleDecrease(w.item_id, w.default_quantity)}
-                    > - </button>
+                    >
+                      {' '}
+                      -{' '}
+                    </button>
                     <div className="text-center px-4 font-semibold w-12">{w.default_quantity}</div>
                     <button
                       className="flex items-center justify-center w-8 h-8 bg-white hover:bg-gray-200 text-gray-600 rounded shadow-sm transition-colors"
                       onClick={() => handleIncrease(w.item_id, w.default_quantity)}
-                    > + </button>
+                    >
+                      {' '}
+                      +{' '}
+                    </button>
                   </div>
                   <button
                     className="p-2 ml-4 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
@@ -238,13 +243,23 @@ export default function WishlistPage({ onUpdate }) {
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-gray-800">ยืนยันการเบิกพัสดุ</DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-gray-800">
+                  ยืนยันการเบิกพัสดุ
+                </DialogTitle>
               </DialogHeader>
               <div className="py-4 space-y-4">
                 {Object.keys(formData).map((key) => (
                   <div key={key}>
                     <label className="block text-sm font-medium mb-1 capitalize text-gray-700">
-                      {key === 'fullname' ? 'ชื่อ-นามสกุล' : key === 'phone' ? 'เบอร์โทรศัพท์' : key === 'department' ? 'แผนก/หน่วยงาน' : key === 'purpose' ? 'วัตถุประสงค์' : 'โครงการ/กิจกรรม'} 
+                      {key === 'fullname'
+                        ? 'ชื่อ-นามสกุล'
+                        : key === 'phone'
+                          ? 'เบอร์โทรศัพท์'
+                          : key === 'department'
+                            ? 'แผนก/หน่วยงาน'
+                            : key === 'purpose'
+                              ? 'วัตถุประสงค์'
+                              : 'โครงการ/กิจกรรม'}
                       <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
@@ -258,18 +273,35 @@ export default function WishlistPage({ onUpdate }) {
                 <div className="border-t pt-4 bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm font-bold mb-2 text-indigo-900">รายการพัสดุที่จะเบิก:</p>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    {wishlist.filter((w) => selectedItems[w.item_id]).map((w) => (
-                      <li key={w.item_id} className="flex justify-between border-b border-gray-200 py-1 last:border-0">
-                        <span>• {w.name}</span>
-                        <span className="font-bold">x {w.default_quantity} {w.unit}</span>
-                      </li>
-                    ))}
+                    {wishlist
+                      .filter((w) => selectedItems[w.item_id])
+                      .map((w) => (
+                        <li
+                          key={w.item_id}
+                          className="flex justify-between border-b border-gray-200 py-1 last:border-0"
+                        >
+                          <span>• {w.name}</span>
+                          <span className="font-bold">
+                            x {w.default_quantity} {w.unit}
+                          </span>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               </div>
               <DialogFooter className="gap-2">
-                <button onClick={() => setDialogOpen(false)} className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors">ยกเลิก</button>
-                <button onClick={handleSubmitWithdraw} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all">ยืนยันการเบิก</button>
+                <button
+                  onClick={() => setDialogOpen(false)}
+                  className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleSubmitWithdraw}
+                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all"
+                >
+                  ยืนยันการเบิก
+                </button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

@@ -4,6 +4,7 @@ import api from '@/Utils/api'
 import { Ellipsis, CircleX } from 'lucide-react'
 import toThaiTime from '@/Utils/toThaiTime'
 import { UserContext } from '@/Context/UserContextInstance'
+import toast from 'react-hot-toast'
 
 import {
   Dialog,
@@ -108,12 +109,12 @@ export default function WithdrawPage() {
         note: approveNote,
       })
 
-      alert('อนุมัติสำเร็จ!')
+      toast.success('อนุมัติสำเร็จ')
       handleCloseDialog()
       await fetchWithdrawList()
     } catch (error) {
       console.error('Approval failed:', error)
-      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.error || error.message))
+      toast.error(`อนุมัติไม่สำเร็จ กรุณาตรวจสอบจำนวนที่อนุมัติ`)
     }
   }
 
@@ -127,7 +128,7 @@ export default function WithdrawPage() {
 
     const qty = parseInt(returnQty)
     if (isNaN(qty) || qty <= 0 || qty > item.approved_quantity) {
-      alert('จำนวนไม่ถูกต้อง')
+      toast.error('จำนวนไม่ถูกต้อง')
       return
     }
 
@@ -141,14 +142,14 @@ export default function WithdrawPage() {
       }
 
       await api.post(`${API_URL}/inventory/log`, payload)
-      alert('บันทึกการคืนของสำเร็จ!')
+      toast.success('บันทึกการคืนของสำเร็จ!')
 
       // Refresh ข้อมูล
       await fetchWithdrawDetail(withdrawId)
       await fetchWithdrawList()
     } catch (error) {
       console.error('Return failed:', error)
-      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message))
+      toast.error(`เกิดข้อผิดพลาดเนื่องจาก ${error?.response.data.message}`)
     }
   }
 

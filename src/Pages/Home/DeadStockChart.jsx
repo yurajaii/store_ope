@@ -28,6 +28,9 @@ const DeadstockChart = ({ data }) => {
   const daysIdle = sortedItems.map((item) => item.days)
 
   const option = {
+    textStyle: {
+      fontFamily: 'Prompt, sans-serif',
+    },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
