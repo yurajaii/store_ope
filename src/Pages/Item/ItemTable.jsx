@@ -42,7 +42,7 @@ export default function ItemTable({
         quantity: qty,
       })
       setQuantities((prev) => ({ ...prev, [itemId]: 1 }))
-       toast.success(`เพิ่มพัสดุลงตระกร้าแล้ว`)
+      toast.success(`เพิ่มพัสดุลงตระกร้าแล้ว`)
       await onUpdate()
     } catch (err) {
       console.error(err)
@@ -128,8 +128,6 @@ export default function ItemTable({
 
             {/* Table Body */}
             <tbody className="bg-white divide-y divide-gray-200">
-              {console.log(data)
-              }
               {data
                 .sort((a, b) => {
                   const aStock = a.quantity > 0 ? 1 : 0
@@ -196,6 +194,15 @@ export default function ItemTable({
                             [item.item_id]: Math.max(1, Number(e.target.value)),
                           }))
                         }
+                        onBlur={(e) => {
+                          const value = Number(e.target.value)
+                          if (value > item.quantity) {
+                            setQuantities((prev) => ({
+                              ...prev,
+                              [item.item_id]: item.quantity,
+                            }))
+                          }
+                        }}
                       />
                     </td>
                     <td className="px-6 py-4 text-sm text-center">

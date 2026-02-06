@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useContext } from 'react'
 import api from '@/Utils/api'
-import { Ellipsis, CircleX } from 'lucide-react'
+import { Ellipsis, CircleX, Trash2 } from 'lucide-react'
 import toThaiTime from '@/Utils/toThaiTime'
 import { UserContext } from '@/Context/UserContextInstance'
 import toast from 'react-hot-toast'
@@ -14,15 +14,20 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 export default function WithdrawPage() {
   const [withdrawList, setWithdrawList] = useState([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedWithdraw, setSelectedWithdraw] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [withdrawToDelete, setWithdrawToDelete] = useState(null)
   const [loading, setLoading] = useState(false)
   const [approveNote, setApproveNote] = useState('')
   const [approvalData, setApprovalData] = useState({})
   const [sortOrder, setSortOrder] = useState('desc')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -34,7 +39,9 @@ export default function WithdrawPage() {
 
   const fetchWithdrawList = async () => {
     try {
-      const res = await api.get(`${API_URL}/withdraw?page=${page}&limit=${limit}`)
+      const res = await api.get(
+        `${API_URL}/withdraw?page=${page}&limit=${limit}&search=${debouncedSearch}`
+      )
       setWithdrawList(res.data.withdrawn)
       setTotalPages(res.data.pagination.totalPages)
     } catch (err) {
@@ -153,18 +160,49 @@ export default function WithdrawPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!withdrawToDelete) return
+
+    try {
+      await api.patch(`${API_URL}/withdraw/${withdrawToDelete}/cancel`)
+
+      toast.success('ยกเลิกใบเบิกเรียบร้อยแล้ว')
+
+      setDeleteDialogOpen(false)
+      setWithdrawToDelete(null)
+
+      await fetchWithdrawList()
+    } catch (error) {
+      console.error('Cancel failed:', error)
+      toast.error(error.response?.data?.message || 'ไม่สามารถยกเลิกได้')
+    }
+  }
+
+  const onOpenDeleteDialog = (id) => {
+    setWithdrawToDelete(id)
+    setDeleteDialogOpen(true)
+  }
   const sortedList = [...withdrawList].sort((a, b) => {
     const dateA = new Date(a.created_at)
     const dateB = new Date(b.created_at)
 
-    return sortOrder === 'desc'
-      ? dateB - dateA // ใหม่ → เก่า
-      : dateA - dateB // เก่า → ใหม่
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
   })
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setPage(1)
+    }, 500)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
     fetchWithdrawList()
-  }, [page])
+  }, [debouncedSearch, page])
 
   return (
     <>
@@ -181,21 +219,19 @@ export default function WithdrawPage() {
           <div className="flex border border-gray-300 rounded px-2 py-2">
             <input
               type="text"
-              name="search"
-              // value={searchQuery}
-              // onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ค้นหาชื่อ/รหัสพัสดุ"
-              className="
-                outline-none
-                focus:outline-none
-                focus:ring-0
-                active:outline-none
-                active:ring-0
-              "
+              placeholder="ค้นหาชื่อ/วัตถุประสงค์/ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="outline-none focus:ring-0 w-full"
             />
-            <button className="text-gray-400">
-              <CircleX />
-            </button>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <CircleX className="w-5 h-5" />
+              </button>
+            )}
           </div>
           {/* Sort Button */}
           <div className="mb-4">
@@ -258,12 +294,27 @@ export default function WithdrawPage() {
                         {toThaiTime(w.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => handleOpenDialog(w)}
-                          className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                        >
-                          <Ellipsis className="w-5 h-5 text-gray-500" />
-                        </button>
+                        <div className="flex justify-center gap-2">
+                          {/* ปุ่มดูรายละเอียดเดิม */}
+                          <button
+                            onClick={() => handleOpenDialog(w)}
+                            className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                            title="ดูรายละเอียด"
+                          >
+                            <Ellipsis className="w-5 h-5 text-gray-500" />
+                          </button>
+
+                          {/* เพิ่มปุ่มลบตรงนี้: แสดงเฉพาะเมื่อสถานะเป็น REQUESTED */}
+                          {w.status === 'REQUESTED' && (
+                            <button
+                              onClick={() => onOpenDeleteDialog(w.id)} // เรียกใช้ฟังก์ชันที่ ESLint บ่นถึง
+                              className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                              title="ยกเลิกใบเบิก"
+                            >
+                              <Trash2 className="w-5 h-5 text-red-500" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -553,6 +604,14 @@ export default function WithdrawPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDelete} // เรียกใช้ฟังก์ชันที่เราเขียนไว้ในข้อ 2
+          title="ยืนยันการยกเลิกใบเบิก"
+          description="คุณแน่ใจหรือไม่ว่าต้องการยกเลิกใบเบิกนี้? รายการสินค้าที่ยังไม่ได้รับจะถูกยกเลิกทั้งหมด"
+        />
       </div>
     </>
   )
