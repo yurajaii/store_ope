@@ -49,27 +49,30 @@ export default function WithdrawPage() {
     }
   }
 
-  const fetchWithdrawDetail = async (withdrawId) => {
-    setLoading(true)
-    try {
-      const res = await api.get(`${API_URL}/withdraw/${withdrawId}`)
-      setSelectedWithdraw(res.data.withdraw)
+const fetchWithdrawDetail = async (withdrawId) => {
+  setLoading(true)
+  try {
+    const res = await api.get(`${API_URL}/withdraw/${withdrawId}`)
+    setSelectedWithdraw(res.data.withdraw)
 
-      const initialApproval = {}
-      res.data.withdraw.items?.forEach((item) => {
-        initialApproval[item.withdraw_item_id] = {
-          approved_quantity: item.requested_quantity,
-          reject_reason: '',
-        }
-      })
-      setApprovalData(initialApproval)
-    } catch (err) {
-      console.error(err)
-      alert('ไม่สามารถโหลดข้อมูลได้')
-    } finally {
-      setLoading(false)
-    }
+    const initialApproval = {}
+    res.data.withdraw.items?.forEach((item) => {
+      const stockQty = Number(item.stock_quantity)
+      const requestedQty = item.requested_quantity
+      
+      initialApproval[item.withdraw_item_id] = {
+        approved_quantity: stockQty === 0 ? 0 : Math.min(requestedQty, stockQty),
+        reject_reason: stockQty === 0 ? 'สินค้าหมดสต็อก' : '',
+      }
+    })
+    setApprovalData(initialApproval)
+  } catch (err) {
+    console.error(err)
+    alert('ไม่สามารถโหลดข้อมูลได้')
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleOpenDialog = async (withdraw) => {
     setDialogOpen(true)
@@ -516,11 +519,20 @@ export default function WithdrawPage() {
                                 type="number"
                                 min="0"
                                 max={item.requested_quantity}
-                                value={approvalData[item.withdraw_item_id]?.approved_quantity || 0}
+                                value={
+                                  Number(item.stock_quantity) === 0
+                                    ? 0
+                                    : approvalData[item.withdraw_item_id]?.approved_quantity || 0
+                                }
                                 onChange={(e) =>
                                   handleQuantityChange(item.withdraw_item_id, e.target.value)
                                 }
-                                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                                  Number(item.stock_quantity) === 0
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : ''
+                                }`}
+                                disabled={Number(item.stock_quantity) === 0}
                               />
                             </div>
 
