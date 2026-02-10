@@ -15,19 +15,19 @@ import { injectMsalInstance } from './Utils/api'
 //  ############################# Context สำหรับจัดการ User #############################
 import { UserProvider } from './Context/UserContext'
 
-
-
-
 const msalInstance = new PublicClientApplication(msalConfig)
+console.log('msalInstance Created', msalInstance)
 
 msalInstance.initialize().then(() => {
   injectMsalInstance(msalInstance)
 
-  msalInstance.handleRedirectPromise().then((response) => {
-    if (response && response.account) {
-      msalInstance.setActiveAccount(response.account)
-    }
-  })
+  // msalInstance.handleRedirectPromise().then((response) => {
+  //   console.log('msalInstance.handleRedirectPromise() response:',response);
+    
+  //   if (response && response.account) {
+  //     msalInstance.setActiveAccount(response.account)
+  //   }
+  // })
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>

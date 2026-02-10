@@ -38,9 +38,8 @@ export default function App() {
 
   // 2. ดึงข้อมูลจาก Backend
   useEffect(() => {
-    console.log('Start Fetching Data')
-
     const fetchUserData = async () => {
+      console.log('Start Fetching Data')
       if (isAuthenticated && accounts.length > 0 && !user) {
         setLoading(true)
         try {
@@ -49,7 +48,7 @@ export default function App() {
             scopes: ['User.Read'],
             account: accounts[0],
           })
-          console.log('Fetching Graph Tiken;m ', graphTokenRes)
+          console.log('Fetching Graph Ticket ', graphTokenRes)
 
           const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
             headers: { Authorization: `Bearer ${graphTokenRes.accessToken}` },
