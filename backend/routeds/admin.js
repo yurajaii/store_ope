@@ -5,6 +5,10 @@ const router = express.Router()
 
 export default function AdminRoute(db) {
   router.get('/', async (req, res) => {
+    if (req.user.role == 'user') {
+      return res.status(403).json({ success: false, message: 'คุณไม่มีสิทธิ์เข้าถึงบริการนี้' })
+    }
+
     try {
       const result = await db.query('SELECT * FROM users ')
 
@@ -45,14 +49,13 @@ export default function AdminRoute(db) {
               azureId,
               displayName,
               mail || req.user.preferred_username, // ใช้จาก body หรือถ้าไม่มีใช้จาก token
-              'user', // Role เริ่มต้น
+              'user',
               jobTitle,
               officeLocation,
             ]
           )
           userData = insertResult.rows[0]
         } else {
-          // (Optional) อัปเดตข้อมูลเผื่อมีการเปลี่ยนชื่อหรือตำแหน่งใน Azure
           await db.query('UPDATE users SET display_name = $1, job_title = $2 WHERE id = $3', [
             displayName,
             jobTitle,
@@ -71,15 +74,19 @@ export default function AdminRoute(db) {
       }
     }
   )
+
   // ในไฟล์ routes ของคุณ (เช่น auth.js หรือ users.js)
   router.patch('/:id/role', async (req, res) => {
     const { id } = req.params
     const { role } = req.body
 
+    if (req.user.role == 'user') {
+      return res.status(403).json({ success: false, message: 'คุณไม่มีสิทธิ์เข้าถึงบริการนี้' })
+    }
     // ตรวจสอบเบื้องต้น (ตัวอย่าง role ที่เรามี 3 role)
     const validRoles = ['system_admin', 'user_admin', 'user']
     if (!validRoles.includes(role)) {
-      return res.status(400).json({ success: false, message: 'Invalid role' })
+      return res.status(400).json({ success: false, message: 'คุณใส่บทบาทไม่ถูกต้อง' })
     }
 
     try {
@@ -92,17 +99,17 @@ export default function AdminRoute(db) {
       const result = await db.query(query, [role, id])
 
       if (result.rowCount === 0) {
-        return res.status(404).json({ success: false, message: 'User not found' })
+        return res.status(404).json({ success: false, message: 'ไม่พอผู้ใช้งานนี้' })
       }
 
       return res.json({
         success: true,
-        message: 'Role updated successfully',
+        message: 'อัพเดทบทบาทผู้ใช้สำเร็จ',
         user: result.rows[0],
       })
     } catch (error) {
-      console.error('Update Role Error:', error)
-      return res.status(500).json({ success: false, message: 'Server Error' })
+      console.error('บันทึกไม่สำเร็จ เนื่องจาก Server Error:', error)
+      return res.status(500).json({ success: false, message: 'การบันทึกล้มเหลว Server Error' })
     }
   })
 

@@ -62,6 +62,71 @@ export default function Withdraw(db) {
     }
   })
 
+  
+router.get('/me', async (req, res) => {
+  const userId = req.user?.oid
+
+  if (!userId) {
+    return res.status(401).json({ message: 'User identity not found in token' })
+  }
+
+  const page = parseInt(req.query.page) || 1
+  const limit = parseInt(req.query.limit) || 10
+  const search = req.query.search || ''
+  const offset = (page - 1) * limit
+
+  try {
+    // 1. สร้างเงื่อนไขพื้นฐาน (ต้องเป็นของ user คนนี้ และไม่ถูก CANCELED)
+    let baseQuery = `WHERE requested_by = $1 AND status != 'CANCELED'`
+    let queryParams = [userId] 
+    
+    let filter = ''
+    if (search) {
+      filter = ` AND (
+        id::text ILIKE $2 
+        OR topic->>'fullname' ILIKE $2 
+        OR topic->>'purpose' ILIKE $2 
+        OR topic->>'project' ILIKE $2
+      )`
+      queryParams.push(`%${search}%`)
+    }
+
+    // 2. ดึงข้อมูลจำนวนทั้งหมด (Total Items)
+    const countQuery = `SELECT COUNT(*) FROM withdraws ${baseQuery} ${filter}`
+    const countResult = await db.query(countQuery, queryParams)
+    const totalItems = parseInt(countResult.rows[0].count)
+
+    // 3. ดึงข้อมูลรายการ (Rows)
+    const dataQueryParams = [...queryParams, limit, offset]
+    const limitIndex = queryParams.length + 1 
+    const offsetIndex = queryParams.length + 2 
+
+    const dataQuery = `
+      SELECT * FROM withdraws 
+      ${baseQuery} ${filter} 
+      ORDER BY created_at DESC 
+      LIMIT $${limitIndex}::int OFFSET $${offsetIndex}::int
+    `
+    
+    const result = await db.query(dataQuery, dataQueryParams)
+    const totalPages = Math.ceil(totalItems / limit)
+
+    return res.json({
+      success: true,
+      withdrawn: result.rows,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    })
+  } catch (error) {
+    console.error('Get withdraw error:', error)
+    return res.status(500).json({ success: false, message: 'Database Error' })
+  }
+})
+
   router.post('/', async (req, res) => {
     const { items, topic } = req.body
     const requestedBy = req.user?.id ?? 2

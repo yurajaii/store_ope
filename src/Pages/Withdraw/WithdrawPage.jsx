@@ -38,41 +38,53 @@ export default function WithdrawPage() {
   const API_URL = import.meta.env.VITE_API_URL
 
   const fetchWithdrawList = async () => {
-    try {
-      const res = await api.get(
-        `${API_URL}/withdraw?page=${page}&limit=${limit}&search=${debouncedSearch}`
-      )
-      setWithdrawList(res.data.withdrawn)
-      setTotalPages(res.data.pagination.totalPages)
-    } catch (err) {
-      console.error(err)
+    if (user.role === 'user') {
+      try {
+        const res = await api.get(
+          `${API_URL}/withdraw/me?page=${page}&limit=${limit}&search=${debouncedSearch}`
+        )
+        setWithdrawList(res.data.withdrawn)
+        setTotalPages(res.data.pagination.totalPages)
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      try {
+        const res = await api.get(
+          `${API_URL}/withdraw?page=${page}&limit=${limit}&search=${debouncedSearch}`
+        )
+        setWithdrawList(res.data.withdrawn)
+        setTotalPages(res.data.pagination.totalPages)
+      } catch (err) {
+        console.error(err)
+      }
     }
   }
 
-const fetchWithdrawDetail = async (withdrawId) => {
-  setLoading(true)
-  try {
-    const res = await api.get(`${API_URL}/withdraw/${withdrawId}`)
-    setSelectedWithdraw(res.data.withdraw)
+  const fetchWithdrawDetail = async (withdrawId) => {
+    setLoading(true)
+    try {
+      const res = await api.get(`${API_URL}/withdraw/${withdrawId}`)
+      setSelectedWithdraw(res.data.withdraw)
 
-    const initialApproval = {}
-    res.data.withdraw.items?.forEach((item) => {
-      const stockQty = Number(item.stock_quantity)
-      const requestedQty = item.requested_quantity
-      
-      initialApproval[item.withdraw_item_id] = {
-        approved_quantity: stockQty === 0 ? 0 : Math.min(requestedQty, stockQty),
-        reject_reason: stockQty === 0 ? 'สินค้าหมดสต็อก' : '',
-      }
-    })
-    setApprovalData(initialApproval)
-  } catch (err) {
-    console.error(err)
-    alert('ไม่สามารถโหลดข้อมูลได้')
-  } finally {
-    setLoading(false)
+      const initialApproval = {}
+      res.data.withdraw.items?.forEach((item) => {
+        const stockQty = Number(item.stock_quantity)
+        const requestedQty = item.requested_quantity
+
+        initialApproval[item.withdraw_item_id] = {
+          approved_quantity: stockQty === 0 ? 0 : Math.min(requestedQty, stockQty),
+          reject_reason: stockQty === 0 ? 'สินค้าหมดสต็อก' : '',
+        }
+      })
+      setApprovalData(initialApproval)
+    } catch (err) {
+      console.error(err)
+      alert('ไม่สามารถโหลดข้อมูลได้')
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
   const handleOpenDialog = async (withdraw) => {
     setDialogOpen(true)

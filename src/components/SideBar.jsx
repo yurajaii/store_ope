@@ -22,9 +22,14 @@ export default function SideBar() {
   const { instance } = useMsal()
   const handleLogout = () => {
     contextLogout()
+
+    sessionStorage.clear()
+    localStorage.clear()
+
     instance
       .logoutRedirect({
         postLogoutRedirectUri: window.location.origin,
+        onRedirectNavigate: () => false,
       })
       .catch((e) => console.error(e))
   }

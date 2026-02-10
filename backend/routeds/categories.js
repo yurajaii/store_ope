@@ -26,7 +26,7 @@ export default function Category(db) {
     if (!category || !subcategory) {
       return res.status(400).json({
         success: false,
-        message: 'category and subcategory are required',
+        message: 'กรุณาใส่ category และ subcategory ให้ครบถ้วน',
       })
     }
 
@@ -45,7 +45,7 @@ export default function Category(db) {
         category: result.rows[0],
       })
     } catch (error) {
-      console.error('Create category error:', error)
+      console.error('สร้าง Category ไม่สำเร็จ เนื่องจาก', error)
 
       return res.status(500).json({
         success: false,
@@ -62,7 +62,7 @@ export default function Category(db) {
     if (!category || !subcategory) {
       return res.status(400).json({
         success: false,
-        message: 'category and subcategory are required',
+        message: 'กรุณาใส่ category และ subcategory ให้ครบถ้วน',
       })
     }
 
@@ -72,7 +72,7 @@ export default function Category(db) {
       if (check.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Category not found',
+          message: 'ไม่พบ Category นี้ในระบบ',
         })
       }
 
@@ -96,12 +96,8 @@ export default function Category(db) {
         category: result.rows[0],
       })
     } catch (error) {
-      console.error('Update category error:', error)
-
-      return res.status(500).json({
-        success: false,
-        message: 'Database Error',
-      })
+      console.error('บันทึกไม่สำเร็จ เนื่องจาก Server Error:', error)
+      return res.status(500).json({ success: false, message: 'การบันทึกล้มเหลว Server Error' })
     }
   })
 

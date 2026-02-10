@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 
 import { useIsAuthenticated, useMsal } from '@azure/msal-react'
+import { InteractionRequiredAuthError } from '@azure/msal-browser'
 import api from './Utils/api'
 
 import SideBar from './components/SideBar'
@@ -35,38 +36,56 @@ export default function App() {
     }
   }, [accounts, instance])
 
-  // 2. ดึงข้อมูลจาก Backend ครั้งเดียว
+  // 2. ดึงข้อมูลจาก Backend
   useEffect(() => {
+    console.log('Start Fetching Data')
+
     const fetchUserData = async () => {
-      // เงื่อนไข: ต้องล็อคอินแล้ว มีบัญชี และยังไม่ได้โหลดข้อมูล User เข้า Context
       if (isAuthenticated && accounts.length > 0 && !user) {
         setLoading(true)
         try {
-          // ก. ขอ Token สำหรับ Microsoft Graph (อันนี้ยังใช้ fetch แยกต่างหากได้เพราะ scope คนละตัว)+
+          // ก. ขอ Token สำหรับ Microsoft Graph
           const graphTokenRes = await instance.acquireTokenSilent({
             scopes: ['User.Read'],
             account: accounts[0],
           })
+          console.log('Fetching Graph Tiken;m ', graphTokenRes)
 
           const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
             headers: { Authorization: `Bearer ${graphTokenRes.accessToken}` },
           })
           const profile = await graphRes.json()
 
-          // ข. ส่งข้อมูลไปที่ Backend โดยใช้ api.js
-          // *** ไม่ต้องใส่ headers Authorization เองแล้ว เพราะ Interceptor ใน api.js จัดการให้! ***
+          // ข. ส่งข้อมูลไปที่ Backend พร้อม Token ของเรา (Backend จะตรวจสอบ Token อีกที)
           const response = await api.post('/auth/me', {
             displayName: profile.displayName,
             mail: profile.mail,
             jobTitle: profile.jobTitle,
             officeLocation: profile.officeLocation,
           })
+          console.log('Post Backend Response: ', response.data)
 
           if (response.data.success) {
             setUser(response.data.user)
           }
         } catch (e) {
           console.error('❌ Backend Sync Error:', e)
+
+          if (e instanceof InteractionRequiredAuthError || e.errorCode === 'consent_required') {
+            console.log('Redirecting for user consent...')
+            // สั่ง Redirect ไปหน้า Consent เพราะเราไม่ได้มีสิทธิ์ Admin ใน EntraAD
+            await instance.acquireTokenRedirect({
+              scopes: ['User.Read'],
+              account: accounts[0],
+            })
+          } else {
+            // ถ้าเป็น Error อื่นจริงๆ เช่น Server ล่ม ค่อยสั่ง Logout
+            console.error('Critical Error, logging out...')
+            setUser(null)
+            instance.logoutRedirect({
+              postLogoutRedirectUri: '/',
+            })
+          }
         } finally {
           setLoading(false)
         }
