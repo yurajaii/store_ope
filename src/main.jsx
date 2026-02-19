@@ -19,23 +19,39 @@ const msalInstance = new PublicClientApplication(msalConfig)
 console.log('msalInstance Created', msalInstance)
 
 msalInstance.initialize().then(() => {
-  injectMsalInstance(msalInstance)
+  msalInstance
+    .handleRedirectPromise()
+    .then((response) => {
+      if (response && response.account) {
+        msalInstance.setActiveAccount(response.account)
+      } else {
+        const currentAccounts = msalInstance.getAllAccounts()
+        if (currentAccounts.length > 0) {
+          msalInstance.setActiveAccount(currentAccounts[0])
+        }
+      }
 
-  // msalInstance.handleRedirectPromise().then((response) => {
-  //   console.log('msalInstance.handleRedirectPromise() response:',response);
-    
-  //   if (response && response.account) {
-  //     msalInstance.setActiveAccount(response.account)
-  //   }
-  // })
+      injectMsalInstance(msalInstance)
 
-  createRoot(document.getElementById('root')).render(
-    <StrictMode>
-      <MsalProvider instance={msalInstance}>
-        <UserProvider>
-          <App />
-        </UserProvider>
-      </MsalProvider>
-    </StrictMode>
-  )
+      // msalInstance.handleRedirectPromise().then((response) => {
+      //   console.log('msalInstance.handleRedirectPromise() response:',response);
+
+      //   if (response && response.account) {
+      //     msalInstance.setActiveAccount(response.account)
+      //   }
+      // })
+
+      createRoot(document.getElementById('root')).render(
+        <StrictMode>
+          <MsalProvider instance={msalInstance}>
+            <UserProvider>
+              <App />
+            </UserProvider>
+          </MsalProvider>
+        </StrictMode>
+      )
+    })
+    .catch((err) => {
+      console.error('MSAL initialization or redirect error:', err)
+    })
 })

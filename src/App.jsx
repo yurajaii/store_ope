@@ -68,7 +68,14 @@ export default function App() {
             setUser(response.data.user)
           }
         } catch (e) {
+          // logging เชิงลึกสำหรับดีบั๊ก
           console.error('❌ Backend Sync Error:', e)
+          if (e && e.message) console.error('Error message:', e.message)
+          if (e && e.errorCode) console.error('Error code:', e.errorCode)
+          if (e && e.response) {
+            console.error('Response status:', e.response.status)
+            console.error('Response data:', e.response.data)
+          }
 
           if (e instanceof InteractionRequiredAuthError || e.errorCode === 'consent_required') {
             console.log('Redirecting for user consent...')
@@ -78,12 +85,19 @@ export default function App() {
               account: accounts[0],
             })
           } else {
-            // ถ้าเป็น Error อื่นจริงๆ เช่น Server ล่ม ค่อยสั่ง Logout
-            console.error('Critical Error, logging out...')
-            setUser(null)
-            instance.logoutRedirect({
-              postLogoutRedirectUri: '/',
-            })
+            // Error อื่น ๆ ที่ไม่เกี่ยวกับการขอสิทธิ์
+            if (e.response && e.response.status === 403) {
+              console.warn('ผู้ใช้ไม่มีสิทธิ์ในระบบ (403)')
+              // toast.error('คุณไม่มีสิทธิ์ใช้งานระบบ');
+              setUser(null)
+              // ไม่สั่ง logoutRedirect ทันที เผื่อจะให้ผู้ใช้ดูข้อความก่อน
+            } else {
+              console.error('Critical Error, logging out...')
+              setUser(null)
+              instance.logoutRedirect({
+                postLogoutRedirectUri: '/',
+              })
+            }
           }
         } finally {
           setLoading(false)

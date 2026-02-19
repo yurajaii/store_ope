@@ -3,13 +3,14 @@ import { useContext } from 'react'
 import { UserContext } from '@/Context/UserContextInstance'
 import { useMsal } from '@azure/msal-react'
 import { LogIn, LogOut, Shield } from 'lucide-react'
+import { loginRequest } from '@/authConfig'
 
 export function LoginPage() {
   const { instance } = useMsal()
   const { logout: contextLogout } = useContext(UserContext)
 
   const handleLogin = () => {
-    instance.loginRedirect().catch((e) => console.error(e))
+    instance.loginRedirect(loginRequest).catch((e) => console.error(e))
   }
 
   const handleLogout = () => {

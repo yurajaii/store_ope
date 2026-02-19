@@ -68,7 +68,7 @@ export default function ItemDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose} >
       <DialogContent className=" font-[prompt] max-w-1/2 w-fit">
         <DialogHeader>
           <DialogTitle>{mode === 'add' ? 'เพิ่มพัสดุ' : 'แก้ไขพัสดุ'}</DialogTitle>

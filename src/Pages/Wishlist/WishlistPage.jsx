@@ -10,6 +10,7 @@ import {
 import { Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useMsal } from '@azure/msal-react'
+import { Description } from '@radix-ui/react-dialog'
 
 export default function WishlistPage({ onUpdate }) {
   const API_URL = import.meta.env.VITE_API_URL
@@ -241,7 +242,8 @@ export default function WishlistPage({ onUpdate }) {
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto font-[prompt]">
+              <Description></Description>
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-gray-800">
                   ยืนยันการเบิกพัสดุ
