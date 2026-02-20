@@ -261,30 +261,33 @@ export default function WithdrawPage() {
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-indigo-50">
+                <thead className="bg-indigo-50 text-center">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                       ลำดับ
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                    <th className="px-6 py-3text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                       วัตถุประสงค์
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                       แผนก
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                       สถานะ
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                       วันที่สร้าง
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      สร้างโดย
+                    </th>
+                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                       จัดการ
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200 text-center">
                   {sortedList.map((w) => (
                     <tr key={w.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
@@ -305,11 +308,15 @@ export default function WithdrawPage() {
                           {w.status}
                         </span>
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {toThaiTime(w.created_at)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex justify-center gap-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">
+                        {user.role === 'user' ? user.job_title : w.creator_name || 'ไม่ทราบชื่อ'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap ">
+                        <div className="flex  gap-2 text-center justify-center">
                           {/* ปุ่มดูรายละเอียดเดิม */}
                           <button
                             onClick={() => handleOpenDialog(w)}
@@ -579,12 +586,42 @@ export default function WithdrawPage() {
                 </div>
 
                 {/* หมายเหตุการอนุมัติ */}
-                {selectedWithdraw.approved_note && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <label className="block text-sm font-medium text-blue-900 mb-1">
-                      หมายเหตุจากผู้อนุมัติ
-                    </label>
-                    <p className="text-sm text-blue-800">{selectedWithdraw.approved_note}</p>
+                {(selectedWithdraw.status === 'APPROVED' ||
+                  selectedWithdraw.status === 'REJECTED') && (
+                  <div className="mt-6 border-t border-gray-100 pt-6">
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
+                      {/* ตกแต่งด้วยแถบสีด้านข้างให้ดูเป็นสถานะ Approval */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+
+                      <div className="flex items-start gap-4">
+                        {/* Avatar วงกลมสไตล์ตัวอักษรย่อ */}
+                        <div className="shrink-0 w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">
+                          {selectedWithdraw.approver_name?.charAt(0) || '?'}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                                ผู้อนุมัติรายการ
+                              </p>
+                              <h4 className="text-sm font-bold text-slate-900">
+                                {selectedWithdraw.approver_name || 'ระบบ'}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/60 rounded-lg p-3 border border-blue-50/50">
+                            <label className="block text-[11px] font-bold text-blue-900/60 uppercase mb-1">
+                              หมายเหตุจากผู้อนุมัติ
+                            </label>
+                            <p className="text-sm text-slate-700 leading-relaxed italic">
+                              {selectedWithdraw.approved_note || '-'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
                 {selectedWithdraw.status === 'REQUESTED' && (
@@ -632,7 +669,7 @@ export default function WithdrawPage() {
         <ConfirmDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          onConfirm={handleDelete} // เรียกใช้ฟังก์ชันที่เราเขียนไว้ในข้อ 2
+          onConfirm={handleDelete}
           title="ยืนยันการยกเลิกใบเบิก"
           description="คุณแน่ใจหรือไม่ว่าต้องการยกเลิกใบเบิกนี้? รายการสินค้าที่ยังไม่ได้รับจะถูกยกเลิกทั้งหมด"
         />
