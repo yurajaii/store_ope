@@ -108,16 +108,16 @@ export default function Package({ onUpdate }) {
 
   return (
     <>
-      <div className="categorypage w-full mt-10">
+      <div className="categorypage w-full  min-h-screen">
         {/* Header */}
-        <div className="header flex justify-between px-10 py-8">
+        <div className="header flex justify-between px-10 py-8 pt-20 bg-gray-100">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">รายการพัสดุ</p>
             <p className="text-gray-400">ลงเบียน แก้ไข ลบ และจัดการรายพัสดุได้ที่นี่</p>
           </div>
         </div>
         {/* Content */}
-        <div className="bg-white px-10 py-4 h-full">
+        <div className="bg-white px-10 py-4">
           {/* Search Bar */}
           <div className="flex justify-end gap-2">
             <div className="flex border border-gray-300 rounded px-2 py-2">
@@ -192,7 +192,7 @@ export default function Package({ onUpdate }) {
                   className="p-2 px-4 bg-primary min-w-35 rounded-2xl font-semibold text-white cursor-pointer hover:bg-secondary"
                   onClick={() => setInventoryDialogOpen(true)}
                 >
-                  เพิ่มสต็อกพัสดุ
+                  จัดการสต็อก
                 </button>
               </>
             )}

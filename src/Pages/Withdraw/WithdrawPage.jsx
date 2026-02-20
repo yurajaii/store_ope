@@ -221,9 +221,9 @@ export default function WithdrawPage() {
 
   return (
     <>
-      <div className="categorypage w-full  mt-10">
+      <div className="categorypage w-full  min-h-screen">
         {/* Header */}
-        <div className="header flex justify-between px-10 py-8">
+        <div className="header flex justify-between px-10 py-8 pt-20 bg-gray-100">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">ใบเบิกของฉัน</p>
             <p className="text-gray-400">สามารถดูสถานะใบเบิกได้ที่นี่</p>
@@ -258,117 +258,124 @@ export default function WithdrawPage() {
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-indigo-50 text-center">
-                  <tr>
-                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      ลำดับ
-                    </th>
-                    <th className="px-6 py-3text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      วัตถุประสงค์
-                    </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      แผนก
-                    </th>
-                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      สถานะ
-                    </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      วันที่สร้าง
-                    </th>
-                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      สร้างโดย
-                    </th>
-                    <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
-                      จัดการ
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="bg-white divide-y divide-gray-200 text-center">
-                  {sortedList.map((w) => (
-                    <tr key={w.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        #{w.id}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{w.topic.purpose}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{w.topic.department}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                            w.status === 'REQUESTED'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : w.status === 'APPROVED'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {w.status}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {toThaiTime(w.created_at)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">
-                        {user.role === 'user' ? user.job_title : w.creator_name || 'ไม่ทราบชื่อ'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap ">
-                        <div className="flex  gap-2 text-center justify-center">
-                          {/* ปุ่มดูรายละเอียดเดิม */}
-                          <button
-                            onClick={() => handleOpenDialog(w)}
-                            className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                            title="ดูรายละเอียด"
-                          >
-                            <Ellipsis className="w-5 h-5 text-gray-500" />
-                          </button>
-
-                          {/* เพิ่มปุ่มลบตรงนี้: แสดงเฉพาะเมื่อสถานะเป็น REQUESTED */}
-                          {w.status === 'REQUESTED' && (
-                            <button
-                              onClick={() => onOpenDeleteDialog(w.id)} // เรียกใช้ฟังก์ชันที่ ESLint บ่นถึง
-                              className="p-1 hover:bg-red-100 rounded-full transition-colors"
-                              title="ยกเลิกใบเบิก"
-                            >
-                              <Trash2 className="w-5 h-5 text-red-500" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Pagination UI */}
-            <div className="flex justify-between items-center px-10 py-4 bg-gray-50 border-t border-gray-200">
-              <p className="text-sm text-gray-600 font-[prompt]">
-                หน้า <span className="font-semibold text-indigo-600">{page}</span> จาก {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((prev) => prev - 1)}
-                  className="px-4 py-2 text-sm font-medium border rounded-lg shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-all font-[prompt]"
-                >
-                  ก่อนหน้า
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((prev) => prev + 1)}
-                  className="px-4 py-2 text-sm font-medium border rounded-lg shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-all font-[prompt]"
-                >
-                  ถัดไป
-                </button>
+          {/* Table */}
+          <div>
+            {withdrawList.length === 0 ? (
+              <div className="mt-6 p-8 text-center border-2 border-dashed rounded-lg text-gray-400">
+                ไม่พบรายการพัสดุ
               </div>
-            </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-indigo-50 text-center">
+                      <tr>
+                        <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          ลำดับ
+                        </th>
+                        <th className="px-6 py-3text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          วัตถุประสงค์
+                        </th>
+                        <th className="px-6 py-3 text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          แผนก
+                        </th>
+                        <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          สถานะ
+                        </th>
+                        <th className="px-6 py-3 text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          วันที่สร้าง
+                        </th>
+                        <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          สร้างโดย
+                        </th>
+                        <th className="px-6 py-3  text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                          จัดการ
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="bg-white divide-y divide-gray-200 text-center">
+                      {sortedList.map((w) => (
+                        <tr key={w.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            #{w.id}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{w.topic.purpose}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{w.topic.department}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span
+                              className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                                w.status === 'REQUESTED'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : w.status === 'APPROVED'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {w.status}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {toThaiTime(w.created_at)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">
+                            {w.creator_name || 'ไม่ทราบชื่อ'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap ">
+                            <div className="flex  gap-2 text-center justify-center">
+                              {/* ปุ่มดูรายละเอียดเดิม */}
+                              <button
+                                onClick={() => handleOpenDialog(w)}
+                                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                                title="ดูรายละเอียด"
+                              >
+                                <Ellipsis className="w-5 h-5 text-gray-500" />
+                              </button>
+
+                              {/* เพิ่มปุ่มลบตรงนี้: แสดงเฉพาะเมื่อสถานะเป็น REQUESTED */}
+                              {w.status === 'REQUESTED' && (
+                                <button
+                                  onClick={() => onOpenDeleteDialog(w.id)} // เรียกใช้ฟังก์ชันที่ ESLint บ่นถึง
+                                  className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                                  title="ยกเลิกใบเบิก"
+                                >
+                                  <Trash2 className="w-5 h-5 text-red-500" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Pagination UI */}
+                <div className="flex justify-between items-center px-10 py-4 bg-gray-50 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 font-[prompt]">
+                    หน้า <span className="font-semibold text-indigo-600">{page}</span> จาก{' '}
+                    {totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={page <= 1}
+                      onClick={() => setPage((prev) => prev - 1)}
+                      className="px-4 py-2 text-sm font-medium border rounded-lg shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-all font-[prompt]"
+                    >
+                      ก่อนหน้า
+                    </button>
+                    <button
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((prev) => prev + 1)}
+                      className="px-4 py-2 text-sm font-medium border rounded-lg shadow-sm bg-white hover:bg-gray-50 disabled:opacity-50 transition-all font-[prompt]"
+                    >
+                      ถัดไป
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          {withdrawList.length === 0 && (
-            <div className="text-center py-12 text-gray-500">ไม่พบข้อมูลใบเบิก</div>
-          )}
         </div>
 
         {/* Dialog for Withdraw Details */}
@@ -586,42 +593,12 @@ export default function WithdrawPage() {
                 </div>
 
                 {/* หมายเหตุการอนุมัติ */}
-                {(selectedWithdraw.status === 'APPROVED' ||
-                  selectedWithdraw.status === 'REJECTED') && (
-                  <div className="mt-6 border-t border-gray-100 pt-6">
-                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                      {/* ตกแต่งด้วยแถบสีด้านข้างให้ดูเป็นสถานะ Approval */}
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
-
-                      <div className="flex items-start gap-4">
-                        {/* Avatar วงกลมสไตล์ตัวอักษรย่อ */}
-                        <div className="shrink-0 w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">
-                          {selectedWithdraw.approver_name?.charAt(0) || '?'}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                                ผู้อนุมัติรายการ
-                              </p>
-                              <h4 className="text-sm font-bold text-slate-900">
-                                {selectedWithdraw.approver_name || 'ระบบ'}
-                              </h4>
-                            </div>
-                          </div>
-
-                          <div className="bg-white/60 rounded-lg p-3 border border-blue-50/50">
-                            <label className="block text-[11px] font-bold text-blue-900/60 uppercase mb-1">
-                              หมายเหตุจากผู้อนุมัติ
-                            </label>
-                            <p className="text-sm text-slate-700 leading-relaxed italic">
-                              {selectedWithdraw.approved_note || '-'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                {selectedWithdraw.approved_note && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-blue-900 mb-1">
+                      หมายเหตุจากผู้อนุมัติ
+                    </label>
+                    <p className="text-sm text-blue-800">{selectedWithdraw.approved_note}</p>
                   </div>
                 )}
                 {selectedWithdraw.status === 'REQUESTED' && (

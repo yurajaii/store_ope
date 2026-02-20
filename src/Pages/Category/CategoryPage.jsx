@@ -62,9 +62,9 @@ export default function CategoryPage() {
 
   return (
     <>
-      <div className="categorypage w-full h-full mt-10">
+      <div className="categorypage w-full h-full ">
         {/* Header */}
-        <div className="header flex justify-between px-10 py-8 ">
+        <div className="header flex justify-between px-10 py-8 pt-20 bg-gray-100">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">หมวดหมู่พัสดุ</p>
             <p className="text-gray-400">จัดการหมวดหมู่พัสดุของคุณ</p>
@@ -89,7 +89,7 @@ export default function CategoryPage() {
         </div>
 
         {/* Content */}
-        <div className="bg-white w-full px-10 py-10 h-full">
+        <div className="bg-white w-full px-10 py-4 ">
           <div className="flex justify-end gap-6">
             <div className="flex border border-gray-300 rounded px-2 py-2">
               <input
@@ -118,6 +118,11 @@ export default function CategoryPage() {
               </button>
             </div>
           </div>
+          {categories.length === 0 && (
+            <div className="mt-6 p-8 text-center border-2 border-dashed rounded-lg text-gray-400">
+              ไม่พบหมวดหมู่พัสดุ
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
             {selectedCategory && (
               <button
@@ -178,6 +183,7 @@ export default function CategoryPage() {
           </div>
         </div>
       </div>
+
       <CategoryDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

@@ -179,8 +179,6 @@ export default function InventoryList(db) {
 
     try {
       let query = `
-
-
       SELECT 
         l.*, 
         i.name AS item_name, 

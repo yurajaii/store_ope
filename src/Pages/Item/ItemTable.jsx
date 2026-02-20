@@ -23,13 +23,6 @@ export default function ItemTable({
   const [itemToDelete, setItemToDelete] = useState(null)
   const { user } = useContext(UserContext)
 
-  if (data.length === 0) {
-    return (
-      <div className="mt-6 p-8 text-center border-2 border-dashed rounded-lg text-gray-400">
-        ไม่พบรายการพัสดุ
-      </div>
-    )
-  }
   const openDeleteDialog = (item) => {
     setItemToDelete(item)
     setDeleteConfirmOpen(true)
@@ -91,11 +84,19 @@ export default function ItemTable({
     }
   }
 
+  if (data.length === 0) {
+    return (
+      <div className="mt-6 p-8 text-center border-2 border-dashed rounded-lg text-gray-400">
+        ไม่พบรายการพัสดุ
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 text-center">
             {/* Table Header */}
             <thead className="bg-indigo-50">
               <tr>
@@ -206,10 +207,10 @@ export default function ItemTable({
                       />
                     </td>
                     <td className="px-6 py-4 text-sm text-center">
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex gap-2 justify-center ">
                         {(user?.role === 'system_admin' || user?.role === 'user_admin') && (
                           <button
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                             onClick={() => handleEdit(item)}
                             title="แก้ไข"
                           >
@@ -217,7 +218,7 @@ export default function ItemTable({
                           </button>
                         )}
                         <button
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30"
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors disabled:opacity-30 cursor-pointer"
                           onClick={() => handleAdd(item.item_id, quantities[item.item_id] ?? 1)}
                           title="เพิ่มลงตะกร้า"
                         >
@@ -234,7 +235,7 @@ export default function ItemTable({
                             </button>
                           ) : (
                             <button
-                              className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors disabled:opacity-30"
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors disabled:opacity-30 cursor-pointer"
                               onClick={() => openDeleteDialog(item)}
                               title="ลบพัสดุ"
                             >

@@ -82,8 +82,8 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    fetchUsageTrend(startDate, endDate, categoryId),
-    fetchTopTurnoverItems(startDate, endDate, categoryId)
+    (fetchUsageTrend(startDate, endDate, categoryId),
+      fetchTopTurnoverItems(startDate, endDate, categoryId))
   }, [startDate, endDate, categoryId])
 
   // console.log('Current reportCard state:', reportCard)
@@ -93,9 +93,9 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="categorypage w-full min-h-screen mt-10">
+      <div className="HomePage w-full min-h-screen">
         {/* Header */}
-        <div className="header flex justify-between px-10 py-8">
+        <div className="header flex justify-between px-10 py-8 pt-20 bg-gray-100">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">Dashboard Overview</p>
             <p className="text-gray-400">ดูภาพรวมการใช้งานระบบได้ที่นี่</p>

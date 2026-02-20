@@ -95,8 +95,8 @@ export default function LogPage() {
 
   return (
     <>
-      <div className="LogPage w-full  mt-10">
-        <div className="header flex justify-between px-10 py-8">
+      <div className="LogPage w-full min-h-screen">
+        <div className="header flex justify-between px-10 py-8 pt-20 bg-gray-100">
           <div className="flex flex-col gap-2">
             <p className="text-3xl font-bold">ประวัติการเคลื่อนไหวพัสดุในคลัง</p>
             <p className="text-gray-400">สามารถดูประวัติการเคลื่อนไหวได้ที่นี่</p>
@@ -105,7 +105,7 @@ export default function LogPage() {
 
         <div className=" bg-white px-10 py-4 h-full">
           {/* Filters */}
-          <div className="bg-white p-6">
+          <div className="bg-white mb-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -156,7 +156,9 @@ export default function LogPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
               </div>
             ) : logs.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">ไม่พบข้อมูลประวัติการเคลื่อนไหว</div>
+              <div className="mt-6 p-8 text-center rounded-lg text-gray-400">
+                ไม่พบข้อมูลประวัติการเคลื่อนไหว
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -212,7 +214,7 @@ export default function LogPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">{log.remark || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {`${log.job_title} (${log.office_location}) `}
+                          {`${log.job_title} `}
                         </td>
                       </tr>
                     ))}

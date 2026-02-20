@@ -121,7 +121,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="w-full h-screen bg-gray-100 font-[prompt] flex">
+      <div className="w-full h-screen bg-white font-[prompt] flex">
         {isAuthenticated && user ? (
           <>
             <Toaster position="top-right" reverseOrder={false} />
@@ -136,7 +136,7 @@ export default function App() {
                 <Route path="/wishlist" element={<WishlistPage onUpdate={fetchFavorites} />} />
                 <Route
                   path="/admin"
-                  element={user.role === 'system_admin' ? <AdminPage /> : <Navigate to="/" />}
+                  element={(user.role === 'system_admin' || user.role === 'user_admin') ? <AdminPage /> : <Navigate to="/" />}
                 />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
