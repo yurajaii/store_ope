@@ -10,8 +10,17 @@ export default function Withdraw(db) {
     const offset = (page - 1) * limit
 
     try {
-      let query = `SELECT * FROM withdraws WHERE status != 'CANCELED'`
-      let countQuery = `SELECT COUNT(*) FROM withdraws WHERE status != 'CANCELED'`
+      let query = `
+      SELECT w.*, u.job_title as creator_name 
+      FROM withdraws w
+      LEFT JOIN users u ON w.requested_by = u.id
+      WHERE w.status != 'CANCELED'`
+
+      let countQuery = `
+      SELECT COUNT(*) 
+      FROM withdraws w
+      LEFT JOIN users u ON w.requested_by = u.id
+      WHERE w.status != 'CANCELED'`
 
       let rows = []
       let totalItems = 0
@@ -22,6 +31,7 @@ export default function Withdraw(db) {
         OR topic->>'fullname' ILIKE $1 
         OR topic->>'purpose' ILIKE $1 
         OR topic->>'project' ILIKE $1
+        OR u.job_title ILIKE $1
       )`
 
         const result = await db.query(
@@ -30,7 +40,7 @@ export default function Withdraw(db) {
         )
         const countResult = await db.query(`${countQuery} ${filter}`, [`%${search}%`])
 
-        // 2. กำหนดค่าเข้าไป (ไม่ต้องใส่ var/let/const ข้างหน้าแล้ว)
+        // 2. กำหนดค่าเข้าไป
         rows = result.rows
         totalItems = parseInt(countResult.rows[0].count)
       } else {
@@ -62,70 +72,69 @@ export default function Withdraw(db) {
     }
   })
 
-  
-router.get('/me', async (req, res) => {
-  const userId = req.user?.oid
+  router.get('/me', async (req, res) => {
+    const userId = req.user?.oid
 
-  if (!userId) {
-    return res.status(401).json({ message: 'User identity not found in token' })
-  }
+    if (!userId) {
+      return res.status(401).json({ message: 'User identity not found in token' })
+    }
 
-  const page = parseInt(req.query.page) || 1
-  const limit = parseInt(req.query.limit) || 10
-  const search = req.query.search || ''
-  const offset = (page - 1) * limit
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const search = req.query.search || ''
+    const offset = (page - 1) * limit
 
-  try {
-    // 1. สร้างเงื่อนไขพื้นฐาน (ต้องเป็นของ user คนนี้ และไม่ถูก CANCELED)
-    let baseQuery = `WHERE requested_by = $1 AND status != 'CANCELED'`
-    let queryParams = [userId] 
-    
-    let filter = ''
-    if (search) {
-      filter = ` AND (
+    try {
+      // 1. สร้างเงื่อนไขพื้นฐาน (ต้องเป็นของ user คนนี้ และไม่ถูก CANCELED)
+      let baseQuery = `WHERE requested_by = $1 AND status != 'CANCELED'`
+      let queryParams = [userId]
+
+      let filter = ''
+      if (search) {
+        filter = ` AND (
         id::text ILIKE $2 
         OR topic->>'fullname' ILIKE $2 
         OR topic->>'purpose' ILIKE $2 
         OR topic->>'project' ILIKE $2
       )`
-      queryParams.push(`%${search}%`)
-    }
+        queryParams.push(`%${search}%`)
+      }
 
-    // 2. ดึงข้อมูลจำนวนทั้งหมด (Total Items)
-    const countQuery = `SELECT COUNT(*) FROM withdraws ${baseQuery} ${filter}`
-    const countResult = await db.query(countQuery, queryParams)
-    const totalItems = parseInt(countResult.rows[0].count)
+      // 2. ดึงข้อมูลจำนวนทั้งหมด (Total Items)
+      const countQuery = `SELECT COUNT(*) FROM withdraws ${baseQuery} ${filter}`
+      const countResult = await db.query(countQuery, queryParams)
+      const totalItems = parseInt(countResult.rows[0].count)
 
-    // 3. ดึงข้อมูลรายการ (Rows)
-    const dataQueryParams = [...queryParams, limit, offset]
-    const limitIndex = queryParams.length + 1 
-    const offsetIndex = queryParams.length + 2 
+      // 3. ดึงข้อมูลรายการ (Rows)
+      const dataQueryParams = [...queryParams, limit, offset]
+      const limitIndex = queryParams.length + 1
+      const offsetIndex = queryParams.length + 2
 
-    const dataQuery = `
+      const dataQuery = `
       SELECT * FROM withdraws 
       ${baseQuery} ${filter} 
       ORDER BY created_at DESC 
       LIMIT $${limitIndex}::int OFFSET $${offsetIndex}::int
     `
-    
-    const result = await db.query(dataQuery, dataQueryParams)
-    const totalPages = Math.ceil(totalItems / limit)
 
-    return res.json({
-      success: true,
-      withdrawn: result.rows,
-      pagination: {
-        totalItems,
-        totalPages,
-        currentPage: page,
-        limit,
-      },
-    })
-  } catch (error) {
-    console.error('Get withdraw error:', error)
-    return res.status(500).json({ success: false, message: 'Database Error' })
-  }
-})
+      const result = await db.query(dataQuery, dataQueryParams)
+      const totalPages = Math.ceil(totalItems / limit)
+
+      return res.json({
+        success: true,
+        withdrawn: result.rows,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      })
+    } catch (error) {
+      console.error('Get withdraw error:', error)
+      return res.status(500).json({ success: false, message: 'Database Error' })
+    }
+  })
 
   router.post('/', async (req, res) => {
     const { items, topic } = req.body
@@ -364,7 +373,22 @@ router.get('/me', async (req, res) => {
     const { id } = req.params
 
     try {
-      const withdrawResult = await db.query('SELECT * FROM withdraws WHERE id = $1', [id])
+      const withdrawResult = await db.query(
+        `SELECT 
+          w.id,
+          w.status,
+          u1.job_title AS created_name,
+          w.created_at,
+          u2.job_title AS approver_name,
+          w.approved_at,
+          w.topic,
+          w.approved_note
+      FROM withdraws w
+      LEFT JOIN users u1 ON w.requested_by = u1.id  
+      LEFT JOIN users u2 ON w.approved_by = u2.id 
+      WHERE w.id = $1  `,
+        [id]
+      )
 
       if (withdrawResult.rows.length === 0) {
         return res.status(404).json({ error: 'Withdraw not found' })
